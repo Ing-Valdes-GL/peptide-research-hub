@@ -76,10 +76,10 @@ export default function Header() {
         
         {/* LOGO */}
         <Link href="/home" className="flex flex-col items-start group">
-          <span className="text-2xl font-black tracking-tighter leading-none group-hover:text-brand-primary transition-colors">
-            VERTEX<span className="text-brand-primary italic">.</span>
+          <span className="text-xl font-black tracking-tighter leading-none group-hover:text-brand-primary transition-colors" style={{ fontFamily: "'Exo', sans-serif" }}>
+            PEPTIDES<span className="text-brand-primary">.</span>
           </span>
-          <span className="text-[8px] font-black tracking-[0.3em] uppercase opacity-40">Biolabs</span>
+          <span className="text-[7px] font-black tracking-[0.25em] uppercase opacity-40">Research Hub</span>
         </Link>
 
         {/* NAVIGATION CENTRALE */}

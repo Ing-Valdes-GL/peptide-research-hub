@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Activity, Mail, Phone, MapPin, ShieldCheck, ArrowRight, MessageCircle, Send } from 'lucide-react'
+import { FlaskConical, Mail, Phone, MapPin, ShieldCheck, ArrowRight, MessageCircle, Send } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import LegalModal from '@/components/legal/LegalModal'
 import PrivacyContent from '@/components/legal/PrivacyContent'
@@ -30,26 +30,26 @@ export default function Footer() {
   }
 
   return (
-    <footer className={`border-t-4 border-blue-500 ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-gray-900'}`}>
+    <footer className={`border-t-4 ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-gray-900'}`} style={{ borderImage: 'linear-gradient(90deg, #7C3AED, #F43F5E) 1' }}>
       <div className="container mx-auto px-4 py-20 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-16">
           
           {/* Brand & Newsletter Column */}
           <div className="col-span-1 md:col-span-5 space-y-8">
-            <Link href="/" className="flex items-center gap-2 group">
-              <Activity className="w-10 h-10 text-blue-500 transition-transform group-hover:rotate-12" />
-              <span className="text-4xl font-black tracking-tighter uppercase">
-                Vertex <span className="text-blue-500">Biolabs</span>
+            <Link href="/" className="flex items-center gap-3 group">
+              <FlaskConical className="w-10 h-10 text-[#7C3AED] transition-transform group-hover:rotate-12" />
+              <span className="text-3xl font-black tracking-tighter uppercase" style={{ fontFamily: "'Exo', sans-serif" }}>
+                Peptides <span className="bg-gradient-to-r from-[#7C3AED] to-[#F43F5E] bg-clip-text text-transparent">Research Hub</span>
               </span>
             </Link>
-            
+
             <p className="max-w-sm text-sm font-bold uppercase tracking-widest opacity-60 leading-relaxed">
-              Powered by Vertex Biolabs. Providing cutting-edge pharmaceutical research with blockchain-grade security.
+              Powered by Peptides Research Hub. Providing cutting-edge pharmaceutical research with precision-grade science.
             </p>
 
             {/* Subscribe Form intégré */}
             <div className="space-y-4">
-              <h4 className="font-black text-xs uppercase tracking-[0.3em] text-sky-500">Newsletter</h4>
+              <h4 className="font-black text-xs uppercase tracking-[0.3em] text-[#7C3AED]">Newsletter</h4>
               <form onSubmit={handleSubscribe} className="relative max-w-sm group">
                 <input 
                   type="email"
@@ -58,28 +58,28 @@ export default function Footer() {
                   onChange={(e) => setEmail(e.target.value)}
                   className={`w-full pl-6 pr-16 py-5 rounded-[2rem] text-xs font-black uppercase tracking-widest outline-none transition-all border-2 ${
                     theme === 'dark' 
-                    ? 'bg-gray-900 border-white/5 focus:border-sky-500' 
-                    : 'bg-gray-100 border-transparent focus:bg-white focus:border-sky-500'
+                    ? 'bg-gray-900 border-white/5 focus:border-[#7C3AED]' 
+                    : 'bg-gray-100 border-transparent focus:bg-white focus:border-[#7C3AED]'
                   }`}
                 />
                 <button 
                   disabled={loading}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-sky-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform disabled:opacity-50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#7C3AED] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform disabled:opacity-50"
                 >
                   {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" /> : <Send size={18} />}
                 </button>
               </form>
             </div>
 
-            <div className="flex items-center gap-3 text-sky-500 font-black text-xs uppercase tracking-widest bg-sky-500/10 w-fit px-6 py-3 rounded-2xl border border-sky-500/20">
+            <div className="flex items-center gap-3 font-black text-xs uppercase tracking-widest w-fit px-6 py-3 rounded-2xl border border-[#7C3AED]/20 text-[#7C3AED] bg-[#7C3AED]/10">
               <ShieldCheck size={18} />
-              <span>Certified Medical Supplier</span>
+              <span>Certified Research Supplier</span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="col-span-1 md:col-span-2">
-            <h3 className="font-black text-sm uppercase tracking-[0.4em] mb-10 text-sky-500">Explore</h3>
+            <h3 className="font-black text-sm uppercase tracking-[0.4em] mb-10 text-[#7C3AED]">Explore</h3>
             <ul className="space-y-6">
               {[
                 { name: 'All Products', href: '/products' },
@@ -87,8 +87,8 @@ export default function Footer() {
                 { name: 'Support Chat', href: '/chat' }
               ].map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:text-sky-500 transition-colors">
-                    <ArrowRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-sky-500"/>
+                  <Link href={link.href} className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest hover:text-[#7C3AED] transition-colors">
+                    <ArrowRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#7C3AED]"/>
                     {link.name}
                   </Link>
                 </li>
@@ -98,14 +98,14 @@ export default function Footer() {
 
           {/* Global Network Section */}
           <div className="col-span-1 md:col-span-3">
-            <h3 className="font-black text-sm uppercase tracking-[0.4em] mb-10 text-sky-500">Our Global Network</h3>
+            <h3 className="font-black text-sm uppercase tracking-[0.4em] mb-10 text-[#7C3AED]">Our Global Network</h3>
             <ul className="space-y-4">
               <li>
                 <a 
                   href="https://maps.app.goo.gl/ojt7ysNJj8QEqsAQA" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-sky-500 hover:text-[#1e3a8a] transition-colors"
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#7C3AED] hover:text-[#F43F5E] transition-colors"
                 >
                   <span className="text-base">🇺🇸</span> USA (Boston – HQ)
                 </a>
@@ -115,7 +115,7 @@ export default function Footer() {
                   href="https://maps.app.goo.gl/Z2vKN9d6wnnX1BfA7" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-sky-500 hover:text-[#1e3a8a] transition-colors"
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#7C3AED] hover:text-[#F43F5E] transition-colors"
                 >
                   <span className="text-base">🇨🇦</span> Canada (Toronto)
                 </a>
@@ -125,7 +125,7 @@ export default function Footer() {
                   href="https://maps.app.goo.gl/6d53TgwzGihrafSF7" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-sky-500 hover:text-[#1e3a8a] transition-colors"
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#7C3AED] hover:text-[#F43F5E] transition-colors"
                 >
                   <span className="text-base">🇬🇧</span> UK (London)
                 </a>
@@ -135,7 +135,7 @@ export default function Footer() {
                   href="https://maps.app.goo.gl/EKz9EbtBHh7jRKKp9" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-sky-500 hover:text-[#1e3a8a] transition-colors"
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#7C3AED] hover:text-[#F43F5E] transition-colors"
                 >
                   <span className="text-base">🇩🇪</span> Germany (Munich)
                 </a>
@@ -145,7 +145,7 @@ export default function Footer() {
                   href="https://maps.app.goo.gl/paHStiGfzqgjaZz89" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-sky-500 hover:text-[#1e3a8a] transition-colors"
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#7C3AED] hover:text-[#F43F5E] transition-colors"
                 >
                   <span className="text-base">🇦🇺</span> Australia (Sydney)
                 </a>
@@ -155,15 +155,15 @@ export default function Footer() {
 
           {/* Contact Section */}
           <div className="col-span-1 md:col-span-4">
-            <h3 className="font-black text-sm uppercase tracking-[0.4em] mb-10 text-sky-500">Contact Us</h3>
+            <h3 className="font-black text-sm uppercase tracking-[0.4em] mb-10 text-[#7C3AED]">Contact Us</h3>
             <ul className="space-y-6">
               <li className="flex items-center gap-5 group">
-                <div className={`p-4 rounded-2xl transition-all ${theme === 'dark' ? 'bg-gray-900 group-hover:bg-sky-500' : 'bg-gray-100 group-hover:bg-sky-500'} group-hover:text-white`}>
+                <div className={`p-4 rounded-2xl transition-all ${theme === 'dark' ? 'bg-gray-900 group-hover:bg-[#7C3AED]' : 'bg-gray-100 group-hover:bg-[#7C3AED]'} group-hover:text-white`}>
                   <Mail size={20} />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Email Support</span>
-                  <a href="/chat" className="text-xs font-black uppercase tracking-widest hover:text-blue-500">support@vertexbiolabs.com</a>
+                  <a href="/chat" className="text-xs font-black uppercase tracking-widest hover:text-[#7C3AED]">support@peptidesresearchhub.com</a>
                 </div>
               </li>
 
@@ -181,7 +181,7 @@ export default function Footer() {
 
               <li className="flex items-center gap-5 group">
                 <a href="https://t.me/+15674168350" target="_blank" rel="noopener noreferrer" className="flex items-center gap-5">
-                  <div className={`p-4 rounded-2xl transition-all ${theme === 'dark' ? 'bg-gray-900 group-hover:bg-blue-500' : 'bg-gray-100 group-hover:bg-blue-500'} group-hover:text-white`}>
+                  <div className={`p-4 rounded-2xl transition-all ${theme === 'dark' ? 'bg-gray-900 group-hover:bg-[#7C3AED]' : 'bg-gray-100 group-hover:bg-[#7C3AED]'} group-hover:text-white`}>
                     <MessageCircle size={20} />
                   </div>
                   <div className="flex flex-col">
@@ -192,7 +192,7 @@ export default function Footer() {
               </li>
 
               <li className="flex items-center gap-5 group pt-4">
-                <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} text-sky-500`}>
+                <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} text-[#7C3AED]`}>
                   <MapPin size={20} />
                 </div>
                 <div className="flex flex-col">
@@ -216,25 +216,25 @@ export default function Footer() {
               <img src="https://upload.wikimedia.org/wikipedia/commons/4/40/JCB_logo.svg" alt="JCB" className="h-6 w-auto" />
            </div>
            <p className={`text-[11px] font-bold uppercase tracking-[0.2em] opacity-50 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              Advancing discovery through Vertex Biolabs research
+              Advancing discovery through Peptides Research Hub science
            </p>
         </div>
 
         {/* Bottom Bar */}
         <div className={`mt-10 pt-10 border-t ${theme === 'dark' ? 'border-white/5' : 'border-gray-100'} flex flex-col md:flex-row justify-between items-center gap-8`}>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
-            {new Date().getFullYear()} Vertex Biolabs. All rights reserved.
+            {new Date().getFullYear()} Peptides Research Hub. All rights reserved.
           </p>
           <div className="flex gap-10">
             <button 
               onClick={() => setShowPrivacyModal(true)}
-              className="text-[10px] font-black uppercase tracking-widest hover:text-sky-500 transition-colors"
+              className="text-[10px] font-black uppercase tracking-widest hover:text-[#7C3AED] transition-colors"
             >
               Privacy Policy
             </button>
             <button 
               onClick={() => setShowRefundModal(true)}
-              className="text-[10px] font-black uppercase tracking-widest hover:text-sky-500 transition-colors"
+              className="text-[10px] font-black uppercase tracking-widest hover:text-[#7C3AED] transition-colors"
             >
               Refund Policy
             </button>

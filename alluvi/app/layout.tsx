@@ -8,40 +8,37 @@ const inter = Inter({ subsets: ['latin'] })
 // Configuration SEO et Partage Social
 export const metadata: Metadata = {
   title: {
-    default: "Vertex Biolabs | Advanced Pharmaceutical Research",
-    template: "%s | Vertex Biolabs"
+    default: "Peptides Research Hub | Advanced Peptide Science",
+    template: "%s | Peptides Research Hub"
   },
-  description: "Vertex Biolabs provides cutting-edge pharmaceutical research and development with secure logistics across the UK.",
+  description: "Peptides Research Hub provides cutting-edge peptide research and development with secure logistics across the UK.",
   metadataBase: new URL('https://alluvihealth.store'),
-  
-  // Apparence dans Google (Outcome)
+
   alternates: {
     canonical: '/',
   },
 
-  // Partage sur WhatsApp, Facebook, LinkedIn (Open Graph)
   openGraph: {
-    title: "Vertex Biolabs | Advanced Research",
-    description: "Cutting-edge pharmaceutical research and development services.",
+    title: "Peptides Research Hub | Advanced Research",
+    description: "Cutting-edge peptide research and development services.",
     url: 'https://alluvihealth.store',
-    siteName: 'Vertex Biolabs',
+    siteName: 'Peptides Research Hub',
     images: [
       {
-        url: '/favicon.ico', // Place ce fichier dans ton dossier /public
+        url: '/favicon.ico',
         width: 1200,
         height: 630,
-        alt: 'Vertex Biolabs Logo',
+        alt: 'Peptides Research Hub Logo',
       },
     ],
     locale: 'en_GB',
     type: 'website',
   },
 
-  // Partage sur Twitter / X
   twitter: {
     card: 'summary_large_image',
-    title: 'Vertex Biolabs',
-    description: 'Advanced Pharmaceutical Research.',
+    title: 'Peptides Research Hub',
+    description: 'Advanced Peptide Research.',
     images: ['/logo-share.png'],
   },
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'framer-motion'
 import Header from '@/components/Header'
@@ -23,7 +23,7 @@ export default function AboutPage() {
       {/* --- SECTION 2 : TESTIMONIAL & SERVICES --- */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-6">
-          {/* Message Propriétaire */}
+          {/* Message PropriÃ©taire */}
           <div className="max-w-3xl mx-auto bg-[#FFF9F5] rounded-3xl p-10 md:p-16 text-center mb-24">
              <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-6 block">
                Message from the store owner
@@ -32,7 +32,7 @@ export default function AboutPage() {
                "Our mission is to provide the highest purity compounds with absolute transparency. Innovation in healthcare starts with precision in the lab."
              </h2>
              <p className="text-[#0ea5e9] font-bold text-xs uppercase tracking-widest">
-               Allen Bryant <span className="text-gray-400 font-normal ml-2">— Vertex Biolabs</span>
+               Allen Bryant <span className="text-gray-400 font-normal ml-2">â€” Peptides Research Hub</span>
              </p>
           </div>
 
@@ -81,12 +81,12 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* --- SECTION 4 : BANNIÈRE DÉFILANTE (Vitesse Rapide & Taille Corrigée) --- */}
+      {/* --- SECTION 4 : BANNIÃˆRE DÃ‰FILANTE (Vitesse Rapide & Taille CorrigÃ©e) --- */}
       <div className="bg-white py-10 overflow-hidden border-b border-gray-100">
         <div className="flex whitespace-nowrap animate-marquee-fast">
           {[1, 2, 3, 4].map((i) => (
             <span key={i} className="text-[#1A1A1A] text-2xl md:text-3xl font-bold uppercase tracking-tighter mx-12 opacity-30">
-              Vegan Products Are 100% Safe For Human Health & Environment ★
+              Vegan Products Are 100% Safe For Human Health & Environment â˜…
             </span>
           ))}
         </div>

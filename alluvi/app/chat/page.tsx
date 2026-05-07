@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useRef, Suspense } from 'react' // Ajout de Suspense
 import { useRouter } from 'next/navigation'
@@ -8,7 +8,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { Send, Paperclip, Check, CheckCheck, MessageSquare, Shield, Info } from 'lucide-react'
 
-// 1. On déplace toute la logique dans un composant interne
+// 1. On dÃ©place toute la logique dans un composant interne
 function ChatContent() {
   const { theme } = useTheme()
   const router = useRouter()
@@ -269,7 +269,7 @@ function ChatContent() {
               </button>
             </div>
             <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] opacity-20 mt-4">
-                Transmission encrypted via Vertex Biolabs v3.4
+                Transmission encrypted via Peptides Research Hub v3.4
             </p>
           </div>
         </div>
@@ -280,7 +280,7 @@ function ChatContent() {
   )
 }
 
-// 2. Export par défaut avec Suspense
+// 2. Export par dÃ©faut avec Suspense
 export default function ChatPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center italic text-[#0ea5e9] uppercase text-xs tracking-widest">Initializing Secure Channel...</div>}>

@@ -72,7 +72,7 @@ export default function ProductDetails() {
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2 bg-blue-50 w-fit px-2 py-1 rounded-md">
               <Shield size={14} className="text-[#1e3a8a]" />
-              <span className="text-[#1e3a8a] text-[10px] font-black uppercase tracking-wider">Certified Vertex Product</span>
+              <span className="text-[#1e3a8a] text-[10px] font-black uppercase tracking-wider">Certified Research Product</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">{product.name}</h1>
             

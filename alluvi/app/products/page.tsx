@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -20,7 +20,7 @@ export default function Header() {
   const [addedItemName, setAddedItemName] = useState('')
   const [filterPromo, setFilterPromo] = useState(false)
 
-  // --- 1. CHARGEMENT DES DONNÉES ---
+  // --- 1. CHARGEMENT DES DONNÃ‰ES ---
   useEffect(() => {
     const fetchData = async () => {
       const { data: catData } = await supabase.from('categories').select('*')
@@ -48,7 +48,7 @@ export default function Header() {
   }, [])
 
   const addToCart = (e: React.MouseEvent, product: any) => {
-    e.preventDefault() // Empêche la navigation vers la page produit lors du clic sur le bouton
+    e.preventDefault() // EmpÃªche la navigation vers la page produit lors du clic sur le bouton
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
     const existingIndex = cart.findIndex((item: any) => item.id === product.id)
     if (existingIndex > -1) { cart[existingIndex].quantity += 1 } 
@@ -74,7 +74,7 @@ export default function Header() {
   return (
     <div className="bg-white min-h-screen flex flex-col">
       
-      {/* POPUP SUCCÈS */}
+      {/* POPUP SUCCÃˆS */}
       <AnimatePresence>
         {showPopup && (
           <motion.div initial={{ opacity: 0, y: 50, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, y: 50, x: '-50%' }} className="fixed bottom-10 left-1/2 z-[300] bg-[#0A0A0A] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[320px] border border-white/10">
@@ -88,18 +88,18 @@ export default function Header() {
         )}
       </AnimatePresence>
 
-      {/* BANDE DÉFILANTE */}
+      {/* BANDE DÃ‰FILANTE */}
       <div className="bg-[#0A0A0A] text-white py-2.5 overflow-hidden border-b border-white/10 relative z-[100]">
         <div className="flex whitespace-nowrap animate-marquee">
           {[1, 2, 3].map((i) => (
-            <span key={i} className="text-[10px] font-bold uppercase tracking-[0.2em] mx-10">Free Shipping on orders above £100 ★ Special Offer</span>
+            <span key={i} className="text-[10px] font-bold uppercase tracking-[0.2em] mx-10">Free Shipping on orders above Â£100 â˜… Special Offer</span>
           ))}
         </div>
       </div>
 
       <header className="bg-white relative z-[90] border-b border-gray-100">
         <div className="container mx-auto px-4 py-6 flex items-center justify-between gap-8">
-          <Link href="/"><img src="/favicon.ico" alt="Vertex Biolabs" className="h-10 md:h-12" /></Link>
+          <Link href="/"><img src="/favicon.ico" alt="Peptides Research Hub" className="h-10 md:h-12" /></Link>
           <div className="hidden md:flex flex-grow max-w-2xl items-center gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-grow flex border border-gray-200 rounded-lg overflow-hidden shadow-sm">
               <input type="text" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} placeholder="Search a product..." className="flex-grow px-6 py-2.5 text-sm outline-none" />
@@ -154,7 +154,7 @@ export default function Header() {
               animate={{ opacity: 1 }} 
               className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group flex flex-col overflow-hidden"
             >
-              {/* IMAGE CLIQUABLE VERS DÉTAILS */}
+              {/* IMAGE CLIQUABLE VERS DÃ‰TAILS */}
               <Link href={`/products/${product.id}`} className="relative aspect-square overflow-hidden bg-[#F9F9F9] flex items-center justify-center p-6 cursor-pointer">
                 {product.on_sale && (
                   <div className="absolute top-4 right-4 bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-md z-10">PROMO</div>
@@ -171,7 +171,7 @@ export default function Header() {
 
               {/* INFOS PRODUIT */}
               <div className="p-6 flex flex-col flex-grow">
-                {/* CATÉGORIE : Orange, Petite et Espacée */}
+                {/* CATÃ‰GORIE : Orange, Petite et EspacÃ©e */}
                 <span className="text-[#0ea5e9] text-[10px] font-black uppercase tracking-[0.15em] mb-1 block">
                   {product.category_name || 'Uncategorized'}
                 </span>
@@ -179,7 +179,7 @@ export default function Header() {
                 {/* CERTIFIED BADGE */}
                 <div className="flex items-center gap-1.5 mb-2 bg-blue-50 w-fit px-2 py-1 rounded-md">
                   <Shield size={12} className="text-[#1e3a8a]" />
-                  <span className="text-[#1e3a8a] text-[9px] font-black uppercase tracking-wider">Certified Vertex Product</span>
+                  <span className="text-[#1e3a8a] text-[9px] font-black uppercase tracking-wider">Certified Research Product</span>
                 </div>
 
                 {/* NOM CLIQUABLE */}
@@ -193,12 +193,12 @@ export default function Header() {
                 
                 <div className="mt-auto">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <p className="text-[#0ea5e9] font-black text-2xl">£{product.price}</p>
+                    <p className="text-[#0ea5e9] font-black text-2xl">Â£{product.price}</p>
                     {product.on_sale && product.sale_price && (
-                      <p className="text-gray-300 line-through text-sm">£{product.price}</p>
+                      <p className="text-gray-300 line-through text-sm">Â£{product.price}</p>
                     )}
                   </div>
-                  <p className="text-gray-500 text-xs mb-4">⭐ 4.6 (25 Reviews)</p>
+                  <p className="text-gray-500 text-xs mb-4">â­ 4.6 (25 Reviews)</p>
 
                   <button 
                     onClick={(e) => addToCart(e, product)} 

@@ -1,13 +1,14 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Exo:wght@300;400;500;600;700;800;900&family=Roboto+Mono:wght@300;400;500;700&display=swap');
 
 @theme {
-  /* On définit nos couleurs brand directement ici pour Tailwind v4 */
-  --color-brand-primary: #0ea5e9;
-  --color-brand-secondary: #1e3a8a;
-  --color-brand-accent: #0284c7;
-  --color-brand-light: #e0f2fe;
-  --color-brand-dark: #1e40af;
-  
+  --color-brand-primary: #7C3AED;
+  --color-brand-secondary: #F43F5E;
+  --color-brand-accent: #8B5CF6;
+  --color-brand-light: #EDE9FE;
+  --color-brand-dark: #5B21B6;
+  --color-brand-rose: #FB7185;
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-border: hsl(var(--border));
@@ -20,33 +21,34 @@
     --border: 220 13% 91%;
   }
   .dark {
-    --background: 224 71% 4%;
+    --background: 260 30% 4%;
     --foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
+    --border: 260 20% 16%;
   }
 }
 
 @layer base {
   body {
-    /* En v4, on utilise les variables définies dans @theme */
     background-color: var(--color-background);
     color: var(--color-foreground);
     transition-property: color, background-color;
     transition-duration: 300ms;
+    font-family: 'Roboto Mono', monospace;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Exo', sans-serif;
   }
 }
 
-/* Sélection de texte */
 ::selection {
-  background-color: #0ea5e9;
+  background-color: #7C3AED;
   color: #ffffff;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #0ea5e9;
+  background: linear-gradient(180deg, #7C3AED, #F43F5E);
   border-radius: 20px;
 }
