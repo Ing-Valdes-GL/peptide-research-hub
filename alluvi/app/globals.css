@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* On définit nos couleurs brand directement ici pour Tailwind v4 */
+  --color-brand-primary: #0ea5e9;
+  --color-brand-secondary: #1e3a8a;
+  --color-brand-accent: #0284c7;
+  --color-brand-light: #e0f2fe;
+  --color-brand-dark: #1e40af;
+  
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --border: 220 13% 91%;
+  }
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+  }
+}
+
+@layer base {
+  body {
+    /* En v4, on utilise les variables définies dans @theme */
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    transition-property: color, background-color;
+    transition-duration: 300ms;
+  }
+}
+
+/* Sélection de texte */
+::selection {
+  background-color: #0ea5e9;
+  color: #ffffff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #0ea5e9;
+  border-radius: 20px;
+}
