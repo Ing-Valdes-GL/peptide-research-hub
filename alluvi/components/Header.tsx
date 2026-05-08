@@ -47,7 +47,8 @@ export default function Header() {
           .eq('id', session.user.id)
           .single()
         
-        const isEmailAdmin = session.user.email === 'doungmolagoungvaldes@gmail.com'
+        const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
+        const isEmailAdmin = adminEmails.includes(session.user.email ?? '')
         setIsAdmin(!!profile?.is_admin || isEmailAdmin)
       }
     }
