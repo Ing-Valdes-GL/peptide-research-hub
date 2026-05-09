@@ -1,49 +1,189 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { ShoppingCart, ArrowRight, Zap, ShieldCheck, FlaskConical, Microscope, Award, Star, ChevronDown, Play } from 'lucide-react'
+import {
+  ShoppingCart, ArrowRight, FlaskConical, Microscope,
+  ShieldCheck, Zap, Award, Star, ChevronDown, Play,
+} from 'lucide-react'
 
-// Floating particles config (stable, server-safe)
-const PARTICLES = [
-  { x: 15, y: 20, s: 2.5, d: 11, delay: 0 },
-  { x: 80, y: 10, s: 1.5, d: 14, delay: 2 },
-  { x: 45, y: 75, s: 3, d: 9, delay: 1 },
-  { x: 25, y: 55, s: 2, d: 13, delay: 3 },
-  { x: 70, y: 40, s: 1.5, d: 12, delay: 0.5 },
-  { x: 55, y: 85, s: 2.5, d: 10, delay: 1.5 },
-  { x: 90, y: 60, s: 1.5, d: 15, delay: 2.5 },
-  { x: 10, y: 90, s: 2, d: 11, delay: 4 },
-  { x: 35, y: 30, s: 1.5, d: 8, delay: 0.8 },
-  { x: 65, y: 15, s: 2.5, d: 16, delay: 3.5 },
-  { x: 5, y: 45, s: 1.5, d: 12, delay: 1.2 },
-  { x: 85, y: 80, s: 2, d: 10, delay: 2.8 },
-]
+// Three.js canvas loads client-only (no SSR)
+const SceneCanvas = dynamic(() => import('@/components/SceneCanvas'), { ssr: false })
 
+// ─── Static data ─────────────────────────────────────────────────────────────
 const REVIEWS = [
-  { name: 'Dr. Sarah K.', role: 'Research Scientist, MIT', text: 'Exceptional purity levels. Every batch consistently verified. Our lab trusts Peptides Research Hub exclusively.', stars: 5 },
-  { name: 'Prof. James M.', role: 'Biochemistry, Oxford', text: 'The logistics are seamless and the compound documentation is meticulous. Highly recommended for serious research.', stars: 5 },
-  { name: 'Dr. Amir P.', role: 'Clinical Researcher', text: 'Fast delivery, sterile packaging, and a support team that actually understands the science.', stars: 5 },
+  { name: 'Dr. Sarah K.',   role: 'Research Scientist, MIT',   text: 'Exceptional purity. Every batch verified. Our lab trusts Peptides Research Hub exclusively.', stars: 5 },
+  { name: 'Prof. James M.', role: 'Biochemistry, Oxford',       text: 'Seamless logistics and meticulous documentation. Highly recommended for serious research.', stars: 5 },
+  { name: 'Dr. Amir P.',    role: 'Clinical Researcher, UCLA',  text: 'Fast delivery, sterile packaging, support that actually understands the science.', stars: 5 },
 ]
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function GlassPanel({ className = '', children, style = {} }: any) {
+  return (
+    <div
+      className={`rounded-3xl border border-white/10 ${className}`}
+      style={{ background: 'rgba(6,0,15,0.72)', backdropFilter: 'blur(28px)', ...style }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([])
   const [addedProduct, setAddedProduct] = useState<any | null>(null)
-  const [videoPlaying, setVideoPlaying] = useState(false)
-  const heroRef = useRef(null)
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0])
+  const pageRef = useRef<HTMLDivElement>(null)
 
+  // ── Supabase ──
   useEffect(() => {
     supabase.from('products').select('*').eq('is_active', true).limit(3)
       .then(({ data }) => setProducts(data || []))
   }, [])
 
+  // ── GSAP ScrollTrigger ──────────────────────────────────────────────────────
+  useEffect(() => {
+    let ctx: any
+
+    const boot = async () => {
+      const { gsap }          = await import('gsap')
+      const { ScrollTrigger } = await import('gsap/ScrollTrigger')
+      gsap.registerPlugin(ScrollTrigger)
+
+      ctx = gsap.context(() => {
+
+        // ── [1] HERO — letters assemble ───────────────────────────────────
+        gsap.from('.hero-word', {
+          y: 120, opacity: 0, rotateX: -80, skewX: 6,
+          stagger: 0.12, duration: 1.4,
+          ease: 'expo.out',
+          delay: 0.3,
+        })
+        gsap.from('.hero-sub', {
+          y: 40, opacity: 0,
+          duration: 1.1, ease: 'expo.out', delay: 0.9,
+        })
+        gsap.from('.hero-cta', {
+          y: 30, opacity: 0,
+          duration: 1, ease: 'expo.out', delay: 1.1,
+        })
+        gsap.from('.hero-badge', {
+          scale: 0.6, opacity: 0, y: -20,
+          duration: 0.8, ease: 'back.out(2)', delay: 0.2,
+        })
+
+        // ── [2] HERO PIN — let Three.js camera travel ─────────────────────
+        ScrollTrigger.create({
+          trigger: '#hero',
+          start: 'top top',
+          end: '+=180%',
+          pin: true,
+          pinSpacing: true,
+        })
+
+        // ── [3] STATS — count-up + stagger ────────────────────────────────
+        gsap.from('.stat-item', {
+          y: 80, opacity: 0, scale: 0.85,
+          stagger: 0.12, duration: 1.1, ease: 'expo.out',
+          scrollTrigger: { trigger: '#stats', start: 'top 80%' },
+        })
+
+        // ── [4] VIDEO SECTION — split reveal ──────────────────────────────
+        gsap.from('.vid-left', {
+          x: -100, opacity: 0, duration: 1.2, ease: 'expo.out',
+          scrollTrigger: { trigger: '#vid-section', start: 'top 75%' },
+        })
+        gsap.from('.vid-right', {
+          x: 100, opacity: 0, duration: 1.2, ease: 'expo.out',
+          scrollTrigger: { trigger: '#vid-section', start: 'top 75%' },
+        })
+
+        // ── [5] PRODUCTS — depth fly-in from Z ────────────────────────────
+        gsap.set('.product-card', { transformPerspective: 1200 })
+        gsap.from('.product-card', {
+          z: -400, opacity: 0, scale: 0.75, rotateY: 18,
+          stagger: 0.1, duration: 1.4, ease: 'expo.out',
+          scrollTrigger: { trigger: '#products', start: 'top 78%' },
+        })
+
+        // ── [6] SPOTLIGHT — parallax layers ───────────────────────────────
+        gsap.to('.parallax-back', {
+          y: -80, ease: 'none',
+          scrollTrigger: {
+            trigger: '#spotlight',
+            start: 'top bottom', end: 'bottom top',
+            scrub: 1,
+          },
+        })
+        gsap.to('.parallax-mid', {
+          y: -40, ease: 'none',
+          scrollTrigger: {
+            trigger: '#spotlight',
+            start: 'top bottom', end: 'bottom top',
+            scrub: 0.6,
+          },
+        })
+        gsap.to('.parallax-front', {
+          y: -15, ease: 'none',
+          scrollTrigger: {
+            trigger: '#spotlight',
+            start: 'top bottom', end: 'bottom top',
+            scrub: 0.3,
+          },
+        })
+        gsap.from('.spotlight-text > *', {
+          y: 60, opacity: 0, stagger: 0.1, duration: 1.1, ease: 'expo.out',
+          scrollTrigger: { trigger: '#spotlight', start: 'top 70%' },
+        })
+
+        // ── [7] REVIEWS — horizontal infinite drift ────────────────────────
+        gsap.from('.review-card', {
+          x: 80, opacity: 0, stagger: 0.1, duration: 1, ease: 'expo.out',
+          scrollTrigger: { trigger: '#reviews', start: 'top 80%' },
+        })
+
+        // ── [8] PROMO — zoom scale ─────────────────────────────────────────
+        gsap.from('.promo-inner', {
+          scale: 0.88, opacity: 0, y: 60, duration: 1.3, ease: 'expo.out',
+          scrollTrigger: { trigger: '#promo', start: 'top 80%' },
+        })
+
+        // ── [9] INFO BAR ──────────────────────────────────────────────────
+        gsap.from('.info-item', {
+          y: 50, opacity: 0, stagger: 0.15, duration: 1, ease: 'expo.out',
+          scrollTrigger: { trigger: '#infobar', start: 'top 82%' },
+        })
+
+        // ── [10] FINAL CTA — camera rush-in feel ──────────────────────────
+        gsap.from('.cta-title span', {
+          y: 100, opacity: 0, rotateX: -70,
+          stagger: 0.08, duration: 1.5, ease: 'expo.out',
+          scrollTrigger: { trigger: '#final-cta', start: 'top 75%' },
+        })
+        gsap.from('.cta-btn', {
+          scale: 0.7, opacity: 0, duration: 1, ease: 'back.out(2)',
+          scrollTrigger: { trigger: '#final-cta', start: 'top 65%' },
+        })
+
+        // ── [11] FLOATING DEPTH BADGES ────────────────────────────────────
+        gsap.from('.depth-badge', {
+          z: -200, opacity: 0, scale: 0.5,
+          stagger: 0.1, duration: 1.2, ease: 'expo.out',
+          scrollTrigger: { trigger: '#hero', start: 'top 20%' },
+        })
+
+      }, pageRef)
+    }
+
+    boot()
+    return () => { if (ctx) ctx.revert() }
+  }, [])
+
+  // ── Cart ──
   const addToCart = (product: any) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
     const idx = cart.findIndex((i: any) => i.id === product.id)
@@ -53,236 +193,266 @@ export default function HomePage() {
     window.dispatchEvent(new Event('storage'))
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0B] overflow-x-hidden">
-      <Header />
+    <div ref={pageRef} className="relative text-white overflow-x-hidden" style={{ background: '#06000F' }}>
 
-      {/* ═══════════════════════════════════════════
-          HERO — Fullscreen immersive with particles
-      ═══════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative bg-[#06000F] min-h-screen flex items-center justify-center overflow-hidden">
+      {/* ── THREE.JS CANVAS (always fixed behind everything) ── */}
+      <SceneCanvas />
 
-        {/* Parallax bg layer */}
-        <motion.div className="absolute inset-0 z-0" style={{ y: heroY }}>
-          {/* Ambient blobs */}
-          <motion.div className="absolute top-1/4 left-1/5 w-[700px] h-[700px] rounded-full blur-[180px] pointer-events-none"
-            style={{ background: 'rgba(124,58,237,0.18)' }}
-            animate={{ scale: [1, 1.15, 1], rotate: [0, 10, 0] }}
-            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute bottom-1/4 right-1/5 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none"
-            style={{ background: 'rgba(244,63,94,0.12)' }}
-            animate={{ scale: [1.1, 1, 1.1], rotate: [0, -10, 0] }}
-            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute top-3/4 left-1/2 w-[300px] h-[300px] rounded-full blur-[100px] pointer-events-none"
-            style={{ background: 'rgba(139,92,246,0.1)' }}
-            animate={{ x: [-30, 30, -30] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+      {/* ── HEADER (z above canvas) ── */}
+      <div className="relative z-50">
+        <Header />
+      </div>
 
-          {/* Photo bg overlay */}
-          <div className="absolute inset-0"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=1920&q=50)',
-              backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.07,
-            }} />
-          {/* Dot grid */}
-          <div className="absolute inset-0 opacity-[0.05]"
-            style={{ backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.9) 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
-        </motion.div>
+      {/* ════════════════════════════════════════════════════════
+          SECTION 1 — HERO (pinned for 180vh of scroll travel)
+      ════════════════════════════════════════════════════════ */}
+      <section
+        id="hero"
+        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+        style={{ zIndex: 10 }}
+      >
+        {/* Depth fog bottom */}
+        <div className="absolute bottom-0 left-0 w-full h-48 pointer-events-none z-10"
+          style={{ background: 'linear-gradient(to top,#06000F,transparent)' }} />
 
-        {/* Floating particles */}
-        {PARTICLES.map((p, i) => (
-          <motion.div key={i} className="absolute rounded-full pointer-events-none"
-            style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s, background: i % 2 === 0 ? '#8B5CF6' : '#FB7185' }}
-            animate={{ y: [0, -35, 0], opacity: [0.15, 0.8, 0.15] }}
-            transition={{ duration: p.d, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }} />
-        ))}
+        {/* Depth badge layer — float in front via perspective */}
+        <div className="absolute inset-0 pointer-events-none" style={{ perspective: '1200px' }}>
+          <div className="depth-badge absolute top-24 left-16 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full border border-[#7C3AED]/30"
+            style={{ background: 'rgba(124,58,237,0.12)', backdropFilter: 'blur(16px)', transform: 'translateZ(40px)' }}>
+            <FlaskConical size={12} className="text-[#8B5CF6]" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.35em] text-[#8B5CF6]">ISO 9001 Certified</span>
+          </div>
+          <div className="depth-badge absolute top-40 right-20 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full border border-[#F43F5E]/30"
+            style={{ background: 'rgba(244,63,94,0.1)', backdropFilter: 'blur(16px)', transform: 'translateZ(60px)' }}>
+            <ShieldCheck size={12} className="text-[#FB7185]" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.35em] text-[#FB7185]">99%+ Purity</span>
+          </div>
+          <div className="depth-badge absolute bottom-32 left-24 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full border border-white/10"
+            style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(16px)', transform: 'translateZ(30px)' }}>
+            <Award size={12} className="text-[#A78BFA]" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.35em] text-[#A78BFA]">Lab Tested</span>
+          </div>
+        </div>
 
-        <motion.div className="relative z-10 text-center px-6 max-w-5xl mx-auto" style={{ opacity: heroOpacity }}>
-
+        {/* Center content */}
+        <div className="relative z-20 text-center px-6 max-w-6xl mx-auto">
           {/* Badge */}
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-10 border border-white/10"
-            style={{ background: 'rgba(124,58,237,0.15)', backdropFilter: 'blur(12px)' }}>
+          <div className="hero-badge inline-flex items-center gap-2 px-5 py-2 rounded-full mb-10 border border-white/10"
+            style={{ background: 'rgba(124,58,237,0.15)', backdropFilter: 'blur(14px)' }}>
             <FlaskConical size={13} className="text-[#8B5CF6]" />
             <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#8B5CF6]">Advanced Peptide Science</span>
-          </motion.div>
+          </div>
 
-          {/* H1 */}
-          <motion.h1 initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl sm:text-7xl lg:text-9xl font-black text-white uppercase leading-[0.82] tracking-[-0.05em] mb-8"
-            style={{ fontFamily: "'Exo',sans-serif" }}>
-            PEPTIDES<br />
-            <span className="bg-gradient-to-r from-[#8B5CF6] via-[#C084FC] to-[#FB7185] bg-clip-text text-transparent">
-              RESEARCH
-            </span><br />
-            HUB
-          </motion.h1>
+          {/* H1 — each word gets stagger */}
+          <div className="overflow-hidden mb-6" style={{ perspective: '800px' }}>
+            <h1 className="text-6xl sm:text-8xl lg:text-[11rem] font-black uppercase leading-[0.82] tracking-[-0.05em]"
+              style={{ fontFamily: "'Exo',sans-serif" }}>
+              <span className="hero-word inline-block bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent">PEPTIDES</span>
+              <br />
+              <span className="hero-word inline-block bg-gradient-to-r from-[#8B5CF6] via-[#C084FC] to-[#FB7185] bg-clip-text text-transparent">RESEARCH</span>
+              <br />
+              <span className="hero-word inline-block bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">HUB</span>
+            </h1>
+          </div>
 
-          {/* Sub */}
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}
-            className="text-xl text-gray-400 font-medium max-w-2xl mx-auto mb-12 leading-relaxed">
-            Precision compounds for the world&apos;s most demanding researchers.
-            <span className="bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent font-bold"> 99%+ purity, guaranteed.</span>
-          </motion.p>
+          <p className="hero-sub text-xl text-white/40 font-medium max-w-2xl mx-auto mb-14 leading-relaxed">
+            Precision compounds for the world&apos;s most demanding researchers.{' '}
+            <span className="bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent font-bold">
+              99%+ purity, guaranteed.
+            </span>
+          </p>
 
-          {/* CTAs */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.45 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/products"
-              className="group relative inline-flex items-center gap-3 px-10 py-5 rounded-xl font-black uppercase text-sm tracking-[0.15em] text-white overflow-hidden transition-all hover:scale-105 hover:shadow-[0_20px_60px_rgba(124,58,237,0.4)]"
+              className="group relative inline-flex items-center gap-3 px-12 py-5 rounded-xl font-black uppercase text-sm tracking-[0.15em] text-white overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_70px_rgba(124,58,237,0.5)]"
               style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
-              <span className="absolute inset-0 bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: 'linear-gradient(135deg,#8B5CF6,#FB7185)' }} />
               <span className="relative flex items-center gap-3">
                 Browse Products <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
               </span>
             </Link>
             <Link href="/about"
-              className="inline-flex items-center gap-3 px-10 py-5 rounded-xl font-black uppercase text-sm tracking-[0.15em] text-white border border-white/20 hover:bg-white/5 transition-all">
-              Learn More
+              className="inline-flex items-center gap-3 px-12 py-5 rounded-xl font-black uppercase text-sm tracking-[0.15em] border border-white/20 hover:bg-white/5 transition-all duration-300">
+              Our Story
             </Link>
-          </motion.div>
+          </div>
 
           {/* Scroll cue */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-            className="mt-16 flex flex-col items-center gap-2">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">Scroll</p>
-            <ChevronDown size={18} className="text-white/20 animate-bounce" />
-          </motion.div>
-        </motion.div>
+          <div className="mt-20 flex flex-col items-center gap-2 opacity-30">
+            <p className="text-[9px] font-bold uppercase tracking-widest">Scroll to explore</p>
+            <ChevronDown size={16} className="animate-bounce" />
+          </div>
+        </div>
+      </section>
 
-        {/* Arch panels */}
-        <motion.div initial={{ opacity: 0, x: -60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.2, ease: [0.16,1,0.3,1] }}
-          className="hidden xl:block absolute left-8 top-1/2 -translate-y-1/2 w-[220px] h-[280px] rounded-t-full overflow-hidden flex-shrink-0"
-          style={{ background: 'linear-gradient(160deg,#7C3AED,#5B21B6)' }}>
-          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent" />
-          <img src="/hero-right-arch.png" className="w-full h-full object-contain p-2 scale-110 drop-shadow-2xl" alt="" />
-        </motion.div>
-        <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.2, ease: [0.16,1,0.3,1] }}
-          className="hidden xl:block absolute right-8 top-1/2 -translate-y-1/2 w-[220px] h-[280px] rounded-t-full overflow-hidden flex-shrink-0"
-          style={{ background: 'linear-gradient(160deg,#F43F5E,#BE185D)' }}>
-          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent" />
-          <img src="/hero-left-arch.png" className="w-full h-full object-contain p-2 scale-110 drop-shadow-2xl" alt="" />
-        </motion.div>
-
-        {/* Marquee */}
-        <div className="absolute bottom-0 w-full py-4 z-20 overflow-hidden border-t border-white/5"
-          style={{ background: 'linear-gradient(90deg,rgba(124,58,237,0.9),rgba(244,63,94,0.9))' }}>
-          <div className="flex whitespace-nowrap animate-marquee">
-            {[1, 2, 3, 4].map((i) => (
-              <span key={i} className="text-white font-black text-[11px] uppercase tracking-[0.35em] mx-12">
-                ★ Fast Shipping on orders above £100 ★ 100% Lab Tested ★ Pure Compounds ★ Peptides Research Hub
-              </span>
+      {/* ════════════════════════════════════════════════════════
+          SECTION 2 — STATS BAR
+      ════════════════════════════════════════════════════════ */}
+      <section id="stats" className="relative py-24" style={{ zIndex: 10 }}>
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom,transparent,rgba(6,0,15,0.9) 20%,rgba(6,0,15,0.9) 80%,transparent)' }} />
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { val: '10,000+', label: 'Active Researchers' },
+              { val: '99%+',    label: 'Purity Standard' },
+              { val: '40+',     label: 'Countries Served' },
+              { val: '4,700+',  label: 'Compounds Shipped' },
+            ].map(({ val, label }) => (
+              <div key={label} className="stat-item text-center">
+                <GlassPanel className="py-8 px-4">
+                  <p className="text-3xl md:text-4xl font-black mb-2 bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent"
+                    style={{ fontFamily: "'Exo',sans-serif" }}>
+                    {val}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">{label}</p>
+                </GlassPanel>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          VIDEO / CINEMATIC SECTION
-      ═══════════════════════════════════════ */}
-      <section className="py-0 relative overflow-hidden">
-        <div className="relative h-[70vh] overflow-hidden group">
-          {/* Background image simulating video still */}
-          <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1576671414442-fba72f5ebe43?auto=format&fit=crop&w=1920&q=70)',
-              backgroundSize: 'cover', backgroundPosition: 'center',
-            }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg,rgba(6,0,15,0.75),rgba(124,58,237,0.3),rgba(244,63,94,0.2))' }} />
+      {/* ════════════════════════════════════════════════════════
+          SECTION 3 — CINEMATIC VIDEO / IMAGE SPLIT
+      ════════════════════════════════════════════════════════ */}
+      <section id="vid-section" className="relative py-0 overflow-hidden" style={{ zIndex: 10 }}>
+        <div className="min-h-[80vh] flex flex-col lg:flex-row">
 
-          {/* Animated scan lines effect */}
-          <motion.div className="absolute inset-0 pointer-events-none"
-            style={{ background: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px)' }}
-            animate={{ y: [0, 4, 0] }} transition={{ duration: 0.2, repeat: Infinity }} />
+          {/* Left — image with deep parallax */}
+          <div className="vid-left relative flex-1 overflow-hidden min-h-[50vh] lg:min-h-0"
+            style={{ perspective: '1000px' }}>
+            {/* Back layer — farthest parallax */}
+            <div className="parallax-back absolute inset-0 scale-110"
+              style={{
+                backgroundImage: 'url(https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=900&q=65)',
+                backgroundSize: 'cover', backgroundPosition: 'center',
+              }} />
+            {/* Mid layer — overlay tint */}
+            <div className="parallax-mid absolute inset-0"
+              style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.55),rgba(244,63,94,0.3))' }} />
+            {/* Front layer — text */}
+            <div className="parallax-front absolute inset-0 flex flex-col justify-end p-12">
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/50 mb-2">Inside the Lab</p>
+              <h2 className="text-4xl font-black uppercase text-white leading-tight"
+                style={{ fontFamily: "'Exo',sans-serif" }}>
+                Where Molecules<br />
+                <span className="bg-gradient-to-r from-[#A78BFA] to-[#FB7185] bg-clip-text text-transparent">
+                  Meet Precision
+                </span>
+              </h2>
+            </div>
 
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white">
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                whileHover={{ scale: 1.1 }}
-                onClick={() => setVideoPlaying(!videoPlaying)}
-                className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 cursor-pointer border-2 border-white/30 hover:border-white transition-all"
+            {/* Play button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center border-2 border-white/30 cursor-pointer group hover:scale-110 transition-transform duration-300"
                 style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
-                <Play size={32} className="text-white ml-2" fill="white" />
-              </motion.div>
-              <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/60 mb-4">Inside Our Labs</motion.p>
-              <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-                className="text-4xl md:text-6xl font-black uppercase tracking-tighter" style={{ fontFamily: "'Exo',sans-serif" }}>
-                Where Science<br />
-                <span className="bg-gradient-to-r from-[#A78BFA] to-[#FB7185] bg-clip-text text-transparent">Meets Precision</span>
-              </motion.h2>
+                <Play size={28} className="text-white ml-2 group-hover:scale-110 transition-transform" fill="white" />
+              </div>
             </div>
           </div>
 
-          {/* Corner badge */}
-          <div className="absolute bottom-8 right-8 px-5 py-3 rounded-2xl border border-white/10 text-white"
-            style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}>
-            <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Certified Lab Standards</p>
-            <p className="text-sm font-black uppercase">ISO 9001 Verified</p>
+          {/* Right — second image layer */}
+          <div className="vid-right relative flex-1 overflow-hidden min-h-[50vh] lg:min-h-0"
+            style={{ perspective: '1000px' }}>
+            <div className="parallax-back absolute inset-0 scale-110"
+              style={{
+                backgroundImage: 'url(https://images.unsplash.com/photo-1576671414442-fba72f5ebe43?auto=format&fit=crop&w=900&q=65)',
+                backgroundSize: 'cover', backgroundPosition: 'center',
+              }} />
+            <div className="parallax-mid absolute inset-0"
+              style={{ background: 'linear-gradient(225deg,rgba(244,63,94,0.5),rgba(124,58,237,0.3))' }} />
+            <div className="parallax-front absolute inset-0 flex flex-col justify-end p-12">
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/50 mb-2">ISO 9001</p>
+              <h2 className="text-4xl font-black uppercase text-white leading-tight"
+                style={{ fontFamily: "'Exo',sans-serif" }}>
+                Certified<br />
+                <span className="bg-gradient-to-r from-[#FB7185] to-[#A78BFA] bg-clip-text text-transparent">
+                  Research Grade
+                </span>
+              </h2>
+            </div>
+
+            {/* Corner badge */}
+            <GlassPanel className="absolute top-8 right-8 px-5 py-3">
+              <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Verified</p>
+              <p className="text-sm font-black uppercase text-white">COA Available</p>
+            </GlassPanel>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          BEST SELLERS
-      ═══════════════════════════════════════ */}
-      <section className="py-28 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#7C3AED] mb-3">Our Collection</p>
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter" style={{ fontFamily: "'Exo',sans-serif" }}>
+      {/* ════════════════════════════════════════════════════════
+          SECTION 4 — BEST SELLERS (3D fly-in)
+      ════════════════════════════════════════════════════════ */}
+      <section id="products" className="relative py-28 overflow-hidden" style={{ zIndex: 10 }}>
+        <div className="absolute inset-0"
+          style={{ background: 'rgba(6,0,15,0.8)', backdropFilter: 'blur(0px)' }} />
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center mb-16">
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#8B5CF6] mb-3">Our Collection</p>
+            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white"
+              style={{ fontFamily: "'Exo',sans-serif" }}>
               Best Selling Products
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6" style={{ perspective: '1200px' }}>
+
             {/* Feature card */}
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              className="rounded-2xl p-10 flex flex-col justify-end min-h-[460px] relative overflow-hidden group"
+            <div className="product-card rounded-2xl p-10 flex flex-col justify-end min-h-[460px] relative overflow-hidden group cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_30px_80px_rgba(124,58,237,0.35)]"
               style={{ background: 'linear-gradient(145deg,#7C3AED,#5B21B6)' }}>
-              <motion.div className="absolute top-0 right-0 w-48 h-48 bg-[#F43F5E]/20 rounded-full blur-[60px]"
-                animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity }} />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#F43F5E]/25 rounded-full blur-[60px] pointer-events-none" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: 'linear-gradient(145deg,#8B5CF6,#7C3AED)' }} />
               <div className="absolute top-10 left-10 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-700">
                 <img src="/leaf-bg.png" className="w-32" alt="" />
               </div>
               <div className="relative z-10">
                 <FlaskConical className="w-8 h-8 text-white/60 mb-6" />
-                <h3 className="text-3xl font-black text-white leading-tight" style={{ fontFamily: "'Exo',sans-serif" }}>
+                <h3 className="text-3xl font-black text-white leading-tight"
+                  style={{ fontFamily: "'Exo',sans-serif" }}>
                   Peptides<br />Research<br />Hub
                 </h3>
               </div>
-            </motion.div>
+            </div>
 
-            {products.map((product, i) => (
-              <motion.div key={product.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.6, ease: [0.16,1,0.3,1] }}
-                className="group border border-gray-100 rounded-2xl p-6 flex flex-col hover:shadow-2xl hover:shadow-[#7C3AED]/10 hover:border-[#7C3AED]/20 transition-all duration-300">
-                <div className="aspect-square mb-6 overflow-hidden bg-[#FAF5FF] rounded-xl">
-                  <img src={product.main_image_url} className="w-full h-full object-contain p-4 group-hover:scale-108 transition-transform duration-500"
-                    style={{ transform: 'scale(1)' }}
-                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+            {products.map((product) => (
+              <div key={product.id}
+                className="product-card group border border-white/10 rounded-2xl p-6 flex flex-col transition-all duration-500 hover:border-[#7C3AED]/40 hover:shadow-[0_30px_80px_rgba(124,58,237,0.2)] hover:scale-[1.02]"
+                style={{ background: 'rgba(6,0,15,0.7)', backdropFilter: 'blur(20px)' }}>
+                <div className="aspect-square mb-6 overflow-hidden rounded-xl"
+                  style={{ background: 'rgba(124,58,237,0.08)' }}>
+                  <img src={product.main_image_url}
+                    className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                     alt={product.name} />
                 </div>
-                <p className="text-[#7C3AED] text-[10px] font-bold uppercase tracking-widest mb-1">{product.category_name || 'Peptide'}</p>
-                <h4 className="font-bold text-sm mb-4 h-10" style={{ fontFamily: "'Exo',sans-serif" }}>{product.name}</h4>
-                <p className="bg-gradient-to-r from-[#7C3AED] to-[#F43F5E] bg-clip-text text-transparent font-black text-lg mb-6">£{product.price}</p>
+                <p className="text-[#8B5CF6] text-[10px] font-bold uppercase tracking-widest mb-1">
+                  {product.category_name || 'Peptide'}
+                </p>
+                <h4 className="font-bold text-sm mb-4 h-10 text-white/90"
+                  style={{ fontFamily: "'Exo',sans-serif" }}>
+                  {product.name}
+                </h4>
+                <p className="font-black text-xl mb-6 bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">
+                  £{product.price}
+                </p>
                 <button onClick={() => addToCart(product)}
-                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-white transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-[#7C3AED]/25 active:scale-[0.98]"
+                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-white transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_10px_30px_rgba(124,58,237,0.4)] active:scale-[0.97]"
                   style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
                   <ShoppingCart size={14} /> Add To Cart
                 </button>
-              </motion.div>
+              </div>
             ))}
           </div>
 
           <div className="text-center mt-12">
             <Link href="/products"
-              className="inline-flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.15em] text-white transition-all hover:scale-105 hover:shadow-[0_15px_40px_rgba(124,58,237,0.3)]"
+              className="inline-flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.15em] text-white transition-all hover:scale-105 hover:shadow-[0_15px_50px_rgba(124,58,237,0.35)]"
               style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
               View Full Catalogue <ArrowRight size={16} />
             </Link>
@@ -290,60 +460,96 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          RESEARCH SPOTLIGHT + Image
-      ═══════════════════════════════════════ */}
-      <section className="py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg,#FAF5FF,#FFF1F2)' }}>
-        <div className="container mx-auto px-6">
+      {/* ════════════════════════════════════════════════════════
+          SECTION 5 — SPOTLIGHT (depth parallax layers)
+      ════════════════════════════════════════════════════════ */}
+      <section id="spotlight" className="relative py-32 overflow-hidden" style={{ zIndex: 10 }}>
+        <div className="absolute inset-0" style={{ background: 'rgba(6,0,15,0.75)' }} />
+
+        {/* Layered depth images */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Farthest layer */}
+          <div className="parallax-back absolute inset-0 opacity-20 scale-110"
+            style={{
+              backgroundImage: 'url(https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&w=1920&q=50)',
+              backgroundSize: 'cover', backgroundPosition: 'center',
+            }} />
+          {/* Mid layer tint */}
+          <div className="parallax-mid absolute inset-0"
+            style={{ background: 'radial-gradient(ellipse at 60% 50%,rgba(124,58,237,0.2),transparent 70%)' }} />
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-20">
-            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: [0.16,1,0.3,1] }} className="lg:w-1/2">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-8"
-                style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
-                <Microscope className="w-6 h-6 text-white" />
+
+            {/* Text — parallax-front */}
+            <div className="parallax-front spotlight-text lg:w-1/2 space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#7C3AED]/30"
+                style={{ background: 'rgba(124,58,237,0.12)', backdropFilter: 'blur(12px)' }}>
+                <Microscope size={13} className="text-[#8B5CF6]" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.35em] text-[#8B5CF6]">Research Spotlight</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight tracking-tighter" style={{ fontFamily: "'Exo',sans-serif" }}>
-                Retatrutide – Pre-Filled Pen<br />Evaluation
+              <h2 className="text-4xl md:text-5xl font-black uppercase leading-tight tracking-tighter text-white"
+                style={{ fontFamily: "'Exo',sans-serif" }}>
+                Retatrutide –<br />Pre-Filled Pen<br />
+                <span className="bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">
+                  Evaluation
+                </span>
               </h2>
-              <p className="text-gray-500 leading-relaxed mb-6 max-w-lg">
+              <p className="text-white/50 leading-relaxed max-w-lg">
                 Part of{' '}
-                <span className="bg-gradient-to-r from-[#7C3AED] to-[#F43F5E] bg-clip-text text-transparent font-bold">Peptides Research Hub&apos;s</span>{' '}
+                <span className="bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent font-bold">
+                  Peptides Research Hub&apos;s
+                </span>{' '}
                 ongoing research program into advanced GLP-1 multi-agonist compounds. Supplied in controlled batches for laboratory analysis of stability, compound behaviour, and injector system performance.
               </p>
-              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-10">Not for human or veterinary consumption.</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/25">
+                Not for human or veterinary consumption.
+              </p>
               <Link href="/about"
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest text-white transition-all hover:scale-105"
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest text-white transition-all hover:scale-105 hover:shadow-[0_15px_40px_rgba(124,58,237,0.35)]"
                 style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
                 About Store <ArrowRight size={14} />
               </Link>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: [0.16,1,0.3,1] }} className="lg:w-1/2 relative">
-              <div className="relative z-10 scale-110 lg:translate-x-6">
-                <img src="/supplement-box.png" alt="Supplement Box" className="w-full drop-shadow-[0_40px_60px_rgba(124,58,237,0.2)]" />
+            {/* Product image with depth layers */}
+            <div className="lg:w-1/2 relative" style={{ perspective: '1000px' }}>
+              {/* Back glow */}
+              <div className="parallax-back absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] rounded-full blur-[80px] pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse,rgba(124,58,237,0.25),rgba(244,63,94,0.1),transparent)' }} />
+              {/* Mid decorative ring */}
+              <div className="parallax-mid absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-64 h-64 rounded-full border border-[#7C3AED]/20 animate-spin"
+                  style={{ animationDuration: '20s' }} />
+                <div className="absolute w-48 h-48 rounded-full border border-[#F43F5E]/15 animate-spin"
+                  style={{ animationDuration: '14s', animationDirection: 'reverse' }} />
               </div>
-              <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-0 rounded-[40%_60%_70%_30%/40%_50%_60%_70%]"
-                animate={{ rotate: [0, 360] }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-                style={{ background: 'conic-gradient(from 0deg,rgba(124,58,237,0.05),rgba(244,63,94,0.03),transparent)' }} />
-            </motion.div>
+              {/* Product image — front layer */}
+              <div className="parallax-front relative z-10 scale-105 lg:translate-x-6">
+                <img src="/supplement-box.png" alt="Supplement Box"
+                  className="w-full drop-shadow-[0_40px_80px_rgba(124,58,237,0.3)] transition-transform duration-700 hover:scale-105" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          PROMO BANNER
-      ═══════════════════════════════════════ */}
-      <section className="py-10">
+      {/* ════════════════════════════════════════════════════════
+          SECTION 6 — PROMO BANNER
+      ════════════════════════════════════════════════════════ */}
+      <section id="promo" className="py-10 relative" style={{ zIndex: 10 }}>
         <div className="container mx-auto px-6">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="rounded-3xl overflow-hidden flex flex-col md:flex-row items-center relative min-h-[380px]"
-            style={{ background: '#06000F' }}>
-            <motion.div className="absolute top-0 left-0 w-80 h-80 bg-[#7C3AED]/20 rounded-full blur-[80px]"
-              animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 8, repeat: Infinity }} />
+          <div className="promo-inner rounded-3xl overflow-hidden flex flex-col md:flex-row items-center relative min-h-[380px] border border-white/5"
+            style={{ background: 'rgba(6,0,15,0.9)', backdropFilter: 'blur(20px)' }}>
+
+            <div className="absolute top-0 left-0 w-80 h-80 bg-[#7C3AED]/15 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-60 h-60 bg-[#F43F5E]/10 rounded-full blur-[60px] pointer-events-none" />
+
             <div className="flex-1 p-12 lg:p-20 z-10 relative">
-              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#8B5CF6] mb-4">Limited Offer</p>
-              <h3 className="text-white text-4xl md:text-5xl font-black mb-4 leading-none tracking-tighter" style={{ fontFamily: "'Exo',sans-serif" }}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#8B5CF6] mb-4">Limited Time</p>
+              <h3 className="text-white text-4xl md:text-5xl font-black mb-4 leading-none tracking-tighter"
+                style={{ fontFamily: "'Exo',sans-serif" }}>
                 No Prep. No Hassle.<br />Just Precision Dosing.
               </h3>
               <p className="text-2xl font-black mb-10 bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">
@@ -354,171 +560,173 @@ export default function HomePage() {
                 Shop Now <ArrowRight size={14} />
               </Link>
             </div>
-            <div className="flex-1 w-full h-full min-h-[380px] flex items-center justify-center relative overflow-hidden"
-              style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.3),rgba(244,63,94,0.2))' }}>
+
+            <div className="flex-1 w-full h-full min-h-[380px] flex items-center justify-center relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-24 hidden md:block"
-                style={{ background: '#06000F', clipPath: 'polygon(0 0,0% 100%,100% 0)' }} />
+                style={{ background: 'rgba(6,0,15,0.9)', clipPath: 'polygon(0 0,0% 100%,100% 0)' }} />
               <div className="relative z-10 flex flex-col items-center">
-                <h4 className="text-white text-5xl font-black opacity-10 absolute -left-16 top-1/2 -translate-y-1/2 rotate-[-90deg] whitespace-nowrap"
-                  style={{ fontFamily: "'Exo',sans-serif" }}>Peptides Research Hub</h4>
-                <img src="/phone-app.png" className="w-48 lg:w-64 drop-shadow-2xl translate-y-8" alt="App Preview" />
+                <span className="text-white text-5xl font-black opacity-5 absolute -left-12 top-1/2 -translate-y-1/2 rotate-[-90deg] whitespace-nowrap select-none"
+                  style={{ fontFamily: "'Exo',sans-serif" }}>Peptides Research Hub</span>
+                <img src="/phone-app.png" className="w-48 lg:w-64 drop-shadow-2xl translate-y-8" alt="App" />
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          REVIEWS
-      ═══════════════════════════════════════ */}
-      <section className="py-28 bg-white">
-        <div className="container mx-auto px-6">
+      {/* ════════════════════════════════════════════════════════
+          SECTION 7 — REVIEWS
+      ════════════════════════════════════════════════════════ */}
+      <section id="reviews" className="py-28 relative overflow-hidden" style={{ zIndex: 10 }}>
+        <div className="absolute inset-0" style={{ background: 'rgba(6,0,15,0.8)' }} />
+        <div className="container mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
-            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#7C3AED] mb-3">Trusted By Scientists</p>
-            <h2 className="text-4xl font-black uppercase tracking-tighter" style={{ fontFamily: "'Exo',sans-serif" }}>What Researchers Say</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#8B5CF6] mb-3">Trusted By Scientists</p>
+            <h2 className="text-4xl font-black uppercase tracking-tighter text-white"
+              style={{ fontFamily: "'Exo',sans-serif" }}>What Researchers Say</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {REVIEWS.map((review, i) => (
-              <motion.div key={review.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.6 }}
-                whileHover={{ y: -6 }}
-                className="border border-gray-100 rounded-2xl p-8 hover:shadow-xl hover:shadow-[#7C3AED]/8 hover:border-[#7C3AED]/20 transition-all duration-300">
+            {REVIEWS.map((r) => (
+              <GlassPanel key={r.name} className="review-card p-8 transition-all duration-300 hover:border-[#7C3AED]/30 hover:shadow-[0_20px_60px_rgba(124,58,237,0.15)] hover:-translate-y-2 cursor-default">
                 <div className="flex gap-1 mb-6">
-                  {Array.from({ length: review.stars }).map((_, s) => (
-                    <Star key={s} size={14} fill="#7C3AED" className="text-[#7C3AED]" />
+                  {Array.from({ length: r.stars }).map((_, s) => (
+                    <Star key={s} size={13} fill="#8B5CF6" className="text-[#8B5CF6]" />
                   ))}
                 </div>
-                <p className="text-gray-600 leading-relaxed mb-6 italic">"{review.text}"</p>
+                <p className="text-white/60 leading-relaxed mb-6 italic text-sm">"{r.text}"</p>
                 <div>
-                  <p className="font-black text-sm uppercase" style={{ fontFamily: "'Exo',sans-serif" }}>{review.name}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{review.role}</p>
+                  <p className="font-black text-sm uppercase text-white"
+                    style={{ fontFamily: "'Exo',sans-serif" }}>{r.name}</p>
+                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{r.role}</p>
                 </div>
-              </motion.div>
+              </GlassPanel>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          INFO BAR
-      ═══════════════════════════════════════ */}
-      <section className="py-20" style={{ background: 'linear-gradient(135deg,#F5F3FF,#FFF1F2)' }}>
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[
-              { icon: Zap, title: 'Fastest Delivery', sub: 'Express shipping worldwide', color: '#7C3AED' },
-              { icon: ShieldCheck, title: 'Quality Products', sub: '100% Lab Tested & Verified', color: '#F43F5E' },
-              { icon: Award, title: 'Secure Payments', sub: 'Encrypted Transaction Data', color: '#8B5CF6' },
-            ].map(({ icon: Icon, title, sub, color }) => (
-              <motion.div key={title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="flex items-center gap-6 group">
-                <motion.div whileHover={{ scale: 1.12 }}
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
-                  style={{ background: `${color}15`, border: `2px solid ${color}20` }}>
-                  <Icon style={{ color }} size={26} />
-                </motion.div>
-                <div>
-                  <h5 className="font-black text-sm uppercase tracking-wider mb-1" style={{ fontFamily: "'Exo',sans-serif" }}>{title}</h5>
-                  <p className="text-[11px] font-bold text-black/50 uppercase">{sub}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          CART POPUP
-      ═══════════════════════════════════════ */}
-      <AnimatePresence>
-        {addedProduct && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-[300] backdrop-blur-sm" onClick={() => setAddedProduct(null)} />
-            <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white z-[310] rounded-2xl p-8 shadow-2xl text-center">
-              <div className="p-4 rounded-xl mb-6" style={{ background: 'linear-gradient(135deg,#F5F3FF,#FFF1F2)' }}>
-                <p className="text-gray-600 text-xs font-bold">Product added to cart.</p>
-              </div>
-              <img src={addedProduct.main_image_url} className="w-20 h-20 mx-auto object-contain mb-4" alt={addedProduct.name} />
-              <h6 className="font-bold text-sm mb-6" style={{ fontFamily: "'Exo',sans-serif" }}>{addedProduct.name}</h6>
-              <div className="flex gap-4">
-                <button onClick={() => setAddedProduct(null)}
-                  className="flex-1 text-white py-3 rounded-xl font-black uppercase text-[10px] hover:scale-[1.02] transition-all"
-                  style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>Continue</button>
-                <Link href="/cart"
-                  className="flex-1 bg-[#0A0A0B] text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 hover:bg-black transition-colors">
-                  Cart <ShoppingCart size={14} />
-                </Link>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ═══════════════════════════════════════
-          FINAL CTA
-      ═══════════════════════════════════════ */}
-      <section className="relative bg-[#06000F] py-36 overflow-hidden border-t border-white/5">
-        <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] rounded-full blur-[160px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse,rgba(124,58,237,0.22) 0%,rgba(244,63,94,0.1) 60%,transparent 100%)' }}
-          animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 8, repeat: Infinity }} />
-
-        {/* Photo accent */}
-        <div className="absolute right-0 top-0 w-1/3 h-full opacity-10"
-          style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=800&q=50)',
-            backgroundSize: 'cover', backgroundPosition: 'center',
-          }} />
-        <div className="absolute right-0 top-0 w-1/3 h-full"
-          style={{ background: 'linear-gradient(90deg,#06000F,transparent)' }} />
-
+      {/* ════════════════════════════════════════════════════════
+          SECTION 8 — INFO BAR
+      ════════════════════════════════════════════════════════ */}
+      <section id="infobar" className="py-20 relative" style={{ zIndex: 10 }}>
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.08),rgba(244,63,94,0.06))' }} />
         <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col items-center text-center">
-            <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="font-bold text-lg mb-8 tracking-tight bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">
-              Science. Precision. Innovation.
-            </motion.p>
-            <motion.h2 initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-              className="text-white text-5xl md:text-8xl font-black uppercase tracking-[-0.04em] flex flex-wrap items-center justify-center gap-4 mb-10"
-              style={{ fontFamily: "'Exo',sans-serif" }}>
-              PEPTIDES
-              <FlaskConical className="w-16 h-16 md:w-24 md:h-24 text-[#8B5CF6]" />
-              RESEARCH HUB
-            </motion.h2>
-            <motion.h3 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
-              className="text-white text-2xl md:text-4xl font-semibold mb-14 tracking-tight max-w-2xl" style={{ fontFamily: "'Exo',sans-serif" }}>
-              Engineered For Research Precision.
-            </motion.h3>
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}>
-              <Link href="/products"
-                className="group relative inline-flex items-center justify-center px-14 py-5 rounded-xl overflow-hidden text-white font-black uppercase text-[12px] tracking-[0.15em] border border-white/20 transition-all hover:border-[#8B5CF6]/50 hover:shadow-[0_0_50px_rgba(124,58,237,0.3)]">
-                <span className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
-                  style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }} />
-                <span className="relative z-10 flex items-center gap-3">
-                  Shop Peptides Products <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Link>
-            </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              { icon: Zap,        title: 'Fastest Delivery',   sub: 'Same-day dispatch before 14:00', color: '#7C3AED' },
+              { icon: ShieldCheck, title: 'Quality Products',  sub: '100% Lab Tested & Verified',     color: '#F43F5E' },
+              { icon: Award,       title: 'Secure Payments',   sub: 'Encrypted Transaction Data',      color: '#8B5CF6' },
+            ].map(({ icon: Icon, title, sub, color }) => (
+              <div key={title}
+                className="info-item flex items-center gap-6 group">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                  style={{ background: `${color}20`, border: `2px solid ${color}30`, boxShadow: `0 0 0 0 ${color}40` }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 30px 4px ${color}30`)}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = `0 0 0 0 ${color}40`)}>
+                  <Icon style={{ color }} size={26} />
+                </div>
+                <div>
+                  <h5 className="font-black text-sm uppercase tracking-wider mb-1 text-white"
+                    style={{ fontFamily: "'Exo',sans-serif" }}>{title}</h5>
+                  <p className="text-[11px] font-bold text-white/30 uppercase">{sub}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════
+          SECTION 9 — FINAL CTA (camera rush-in effect via Three.js)
+      ════════════════════════════════════════════════════════ */}
+      <section id="final-cta" className="relative py-40 overflow-hidden" style={{ zIndex: 10 }}>
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom,rgba(6,0,15,0.6),rgba(6,0,15,0.95))' }} />
+
+        {/* Deep photo accent */}
+        <div className="absolute inset-0 opacity-8 scale-110"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=1920&q=40)',
+            backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.06,
+          }} />
+
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <p className="text-sm font-bold uppercase tracking-[0.4em] mb-10 bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">
+            Science. Precision. Innovation.
+          </p>
+
+          {/* Title — each word gets depth stagger */}
+          <div className="cta-title overflow-hidden mb-10" style={{ perspective: '900px' }}>
+            <h2 className="text-5xl md:text-8xl font-black uppercase tracking-[-0.04em] flex flex-wrap items-center justify-center gap-4"
+              style={{ fontFamily: "'Exo',sans-serif" }}>
+              <span className="inline-block text-white">PEPTIDES</span>
+              <FlaskConical className="w-16 h-16 md:w-24 md:h-24 text-[#8B5CF6]" />
+              <span className="inline-block bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">
+                RESEARCH HUB
+              </span>
+            </h2>
+          </div>
+
+          <h3 className="text-white/60 text-2xl md:text-4xl font-semibold mb-16 tracking-tight max-w-2xl mx-auto"
+            style={{ fontFamily: "'Exo',sans-serif" }}>
+            Engineered For Research Precision.
+          </h3>
+
+          <Link href="/products"
+            className="cta-btn group relative inline-flex items-center justify-center px-16 py-6 rounded-xl overflow-hidden text-white font-black uppercase text-sm tracking-[0.15em] border border-white/20 transition-all duration-400 hover:border-[#8B5CF6]/50 hover:shadow-[0_0_60px_rgba(124,58,237,0.4)]">
+            <span className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-400"
+              style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }} />
+            <span className="relative z-10 flex items-center gap-3">
+              Shop Peptides Products
+              <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
+            </span>
+          </Link>
+        </div>
+
+        {/* Fine grid overlay */}
         <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.3) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       </section>
 
-      <Footer />
+      {/* ── FOOTER ── */}
+      <div className="relative z-20">
+        <Footer />
+      </div>
+
+      {/* ── CART POPUP ── */}
+      {addedProduct && (
+        <div className="fixed inset-0 bg-black/60 z-[300] backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setAddedProduct(null)}>
+          <div className="w-full max-w-md rounded-2xl p-8 shadow-2xl text-center border border-white/10"
+            style={{ background: 'rgba(6,0,15,0.95)', backdropFilter: 'blur(24px)' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="p-4 rounded-xl mb-6"
+              style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(244,63,94,0.1))' }}>
+              <p className="text-white/60 text-xs font-bold">Product added to cart.</p>
+            </div>
+            <img src={addedProduct.main_image_url} className="w-20 h-20 mx-auto object-contain mb-4" alt={addedProduct.name} />
+            <h6 className="font-bold text-sm mb-6 text-white"
+              style={{ fontFamily: "'Exo',sans-serif" }}>{addedProduct.name}</h6>
+            <div className="flex gap-4">
+              <button onClick={() => setAddedProduct(null)}
+                className="flex-1 text-white py-3 rounded-xl font-black uppercase text-[10px] hover:scale-[1.02] transition-all"
+                style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
+                Continue
+              </button>
+              <Link href="/cart"
+                className="flex-1 bg-white text-[#06000F] py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 hover:bg-white/90 transition-colors">
+                Cart <ShoppingCart size={14} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes marquee { 0% { transform:translateX(0) } 100% { transform:translateX(-50%) } }
         .animate-marquee { animation: marquee 30s linear infinite; }
-        @keyframes marquee-slow { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .animate-marquee-slow { animation: marquee-slow 40s linear infinite; }
+        html { scroll-behavior: smooth; }
       `}</style>
     </div>
   )
