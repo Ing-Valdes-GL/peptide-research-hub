@@ -49,20 +49,19 @@ export default function AdminDashboard() {
         .eq('id', user.id)
         .single()
 
-      const isOwnerEmail = user.email === 'doungmolagoungvaldes@gmail.com'
+      const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
+      const isOwnerEmail = adminEmails.includes(user.email ?? '')
 
       if (profile?.is_admin || isOwnerEmail) {
         setUser(user)
-        // On ne charge les données que si l'accès est validé
         await Promise.all([loadStats(), loadRecentOrders()])
         setLoading(false)
       } else {
-        // Redirection si l'utilisateur n'est pas admin
         router.push('/home')
       }
     } catch (err) {
       console.error("Security Check Error:", err)
-      router.push('/home')
+      router.push('/login')
     }
   }
 

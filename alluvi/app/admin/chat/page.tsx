@@ -68,8 +68,10 @@ function ChatInterface() {
   const checkAdmin = async () => {
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser) { router.push('/login'); return; }
+    const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
+    const isOwner = adminEmails.includes(currentUser.email ?? '')
     const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', currentUser.id).single()
-    if (!profile?.is_admin) { router.push('/home'); return; }
+    if (!profile?.is_admin && !isOwner) { router.push('/home'); return; }
     setUser(currentUser)
     loadConversations(currentUser.id)
   }

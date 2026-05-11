@@ -27,7 +27,8 @@ export default function AdminDashboard() {
       if (!session) { setLoading(false); return; }
 
       const user = session.user
-      const isMasterAdmin = user.email === 'doungmolagoungvaldes@gmail.com'
+      const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
+      const isMasterAdmin = adminEmails.includes(user.email ?? '')
       const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
 
       const checkAdmin = isMasterAdmin || profile?.is_admin === true
