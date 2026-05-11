@@ -530,8 +530,22 @@ export default function LandingPage() {
               </div>
               {/* Product image — front layer */}
               <div className="parallax-front relative z-10 scale-105 lg:translate-x-6">
-                <img src="/supplement-box.png" alt="Supplement Box"
-                  className="w-full drop-shadow-[0_40px_80px_rgba(124,58,237,0.3)] transition-transform duration-700 hover:scale-105" />
+                <div className="relative rounded-2xl overflow-hidden border border-[#7C3AED]/20 shadow-[0_40px_80px_rgba(124,58,237,0.25)]">
+                  <img
+                    src="https://images.unsplash.com/photo-1752842350772-2921657e50d7?auto=format&fit=crop&w=600&q=80"
+                    alt="Pharmaceutical Research Compounds"
+                    className="w-full object-cover transition-transform duration-700 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'linear-gradient(to top,rgba(6,0,15,0.85) 0%,rgba(6,0,15,0.25) 55%,transparent 100%)' }} />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#8B5CF6] mb-1">Research Grade</p>
+                    <p className="text-lg font-black uppercase text-white leading-tight"
+                      style={{ fontFamily: "'Exo',sans-serif" }}>
+                      Precision Peptide<br />Compounds
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -564,13 +578,46 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="flex-1 w-full h-full min-h-[380px] flex items-center justify-center relative overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-24 hidden md:block"
-                style={{ background: 'rgba(6,0,15,0.9)', clipPath: 'polygon(0 0,0% 100%,100% 0)' }} />
-              <div className="relative z-10 flex flex-col items-center">
-                <span className="text-white text-5xl font-black opacity-5 absolute -left-12 top-1/2 -translate-y-1/2 rotate-[-90deg] whitespace-nowrap select-none"
-                  style={{ fontFamily: "'Exo',sans-serif" }}>Peptides Research Hub</span>
-                <img src="/phone-app.png" className="w-48 lg:w-64 drop-shadow-2xl translate-y-8" alt="App" />
+            <div className="flex-1 relative overflow-hidden min-h-[380px] flex items-center justify-center">
+              {/* Pharma background image */}
+              <div className="absolute inset-0"
+                style={{
+                  backgroundImage: 'url(https://images.unsplash.com/photo-1763142843470-9a9e9db7f68f?auto=format&fit=crop&w=800&q=65)',
+                  backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.22,
+                }} />
+              {/* Left diagonal mask */}
+              <div className="absolute left-0 top-0 bottom-0 w-24 hidden md:block pointer-events-none"
+                style={{ background: 'rgba(6,0,15,0.95)', clipPath: 'polygon(0 0,0% 100%,100% 100%)' }} />
+              {/* Branded glass panel */}
+              <div className="relative z-10 flex flex-col items-center gap-5 p-8 rounded-3xl border border-white/10 mx-8"
+                style={{ background: 'rgba(6,0,15,0.65)', backdropFilter: 'blur(24px)' }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}>
+                  <FlaskConical size={28} className="text-white" />
+                </div>
+                <div className="text-center">
+                  <p className="text-white font-black text-2xl uppercase tracking-tight leading-none"
+                    style={{ fontFamily: "'Exo',sans-serif" }}>PEPTIDES</p>
+                  <p className="font-black text-2xl uppercase tracking-tight leading-none bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent"
+                    style={{ fontFamily: "'Exo',sans-serif" }}>RESEARCH HUB</p>
+                </div>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#7C3AED]/30"
+                    style={{ background: 'rgba(124,58,237,0.1)' }}>
+                    <ShieldCheck size={12} className="text-[#8B5CF6] shrink-0" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#8B5CF6]">ISO 9001 Certified</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#F43F5E]/30"
+                    style={{ background: 'rgba(244,63,94,0.08)' }}>
+                    <Award size={12} className="text-[#FB7185] shrink-0" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#FB7185]">99%+ Purity Guaranteed</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10"
+                    style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <Zap size={12} className="text-[#A78BFA] shrink-0" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#A78BFA]">Same-Day Dispatch</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
