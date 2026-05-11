@@ -328,7 +328,7 @@ export default function HomePage() {
             {/* Back layer — farthest parallax */}
             <div className="parallax-back absolute inset-0 scale-110"
               style={{
-                backgroundImage: 'url(https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=900&q=65)',
+                backgroundImage: 'url(https://images.unsplash.com/photo-1579165466991-467135ad3110?auto=format&fit=crop&w=900&q=80)',
                 backgroundSize: 'cover', backgroundPosition: 'center',
               }} />
             {/* Mid layer — overlay tint */}
@@ -360,7 +360,7 @@ export default function HomePage() {
             style={{ perspective: '1000px' }}>
             <div className="parallax-back absolute inset-0 scale-110"
               style={{
-                backgroundImage: 'url(https://images.unsplash.com/photo-1576671414442-fba72f5ebe43?auto=format&fit=crop&w=900&q=65)',
+                backgroundImage: 'url(https://images.unsplash.com/photo-1639772823849-6efbd173043c?auto=format&fit=crop&w=900&q=80)',
                 backgroundSize: 'cover', backgroundPosition: 'center',
               }} />
             <div className="parallax-mid absolute inset-0"
@@ -471,7 +471,7 @@ export default function HomePage() {
           {/* Farthest layer */}
           <div className="parallax-back absolute inset-0 opacity-20 scale-110"
             style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&w=1920&q=50)',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1511174511562-5f7f18b874f8?auto=format&fit=crop&w=1920&q=60)',
               backgroundSize: 'cover', backgroundPosition: 'center',
             }} />
           {/* Mid layer tint */}
@@ -647,7 +647,7 @@ export default function HomePage() {
         {/* Deep photo accent */}
         <div className="absolute inset-0 opacity-8 scale-110"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=1920&q=40)',
+            backgroundImage: 'url(https://images.unsplash.com/photo-1562789233-495f52b583dd?auto=format&fit=crop&w=1920&q=40)',
             backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.06,
           }} />
 
