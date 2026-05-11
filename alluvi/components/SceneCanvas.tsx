@@ -35,29 +35,50 @@ export default function SceneCanvas() {
       camera.position.set(0, 0, 14)
 
       // ── DNA Helix particle system ──────────────────────────
-      const COUNT = 4000
+      const COUNT = 6000
       const pos = new Float32Array(COUNT * 3)
       const col = new Float32Array(COUNT * 3)
-      const sizes = new Float32Array(COUNT)
 
       for (let i = 0; i < COUNT; i++) {
-        const t = (i / COUNT) * Math.PI * 28
-        const strand = i % 3
-        const phaseOffset = (strand / 3) * Math.PI * 2
-        const radius = strand === 2 ? 0 : 2.2
-        const spread = strand === 2 ? 0 : 0.18
-
-        pos[i * 3]     = Math.cos(t + phaseOffset) * radius + (Math.random() - 0.5) * spread
-        pos[i * 3 + 1] = (i / COUNT) * 55 - 27
-        pos[i * 3 + 2] = Math.sin(t + phaseOffset) * radius + (Math.random() - 0.5) * spread
-
-        // Violet → Rose gradient + scattered white sparks
+        const t = (i / COUNT) * Math.PI * 32
         const pct = i / COUNT
-        const isCore = strand === 2
-        col[i * 3]     = isCore ? 1 : 0.486 + 0.471 * pct
-        col[i * 3 + 1] = isCore ? 1 : 0.227 + 0.020 * pct
-        col[i * 3 + 2] = isCore ? 1 : 0.929 - 0.560 * pct
-        sizes[i] = isCore ? 0.03 + Math.random() * 0.04 : 0.05 + Math.random() * 0.04
+        // 3 types: strand A (40%), strand B (40%), inner nebula (20%)
+        const type = i % 10
+
+        let x, z, r, g, b
+
+        if (type < 4) {
+          // Strand A — violet helix
+          x = Math.cos(t) * 2.2 + (Math.random() - 0.5) * 0.22
+          z = Math.sin(t) * 2.2 + (Math.random() - 0.5) * 0.22
+          r = 0.54 + 0.44 * pct   // #8B5CF6 → #FB7185
+          g = 0.36 * (1 - pct * 0.7)
+          b = 0.965 - 0.44 * pct
+        } else if (type < 8) {
+          // Strand B — rose helix (opposite phase)
+          x = Math.cos(t + Math.PI) * 2.2 + (Math.random() - 0.5) * 0.22
+          z = Math.sin(t + Math.PI) * 2.2 + (Math.random() - 0.5) * 0.22
+          r = 0.957
+          g = 0.247 * (1 - pct * 0.5)
+          b = 0.369 + 0.22 * pct
+        } else {
+          // Inner nebula — scattered glow around axis
+          const nr = Math.random() * 1.6
+          const na = Math.random() * Math.PI * 2
+          x = Math.cos(na) * nr
+          z = Math.sin(na) * nr
+          // soft lavender sparks
+          r = 0.68 + 0.18 * Math.random()
+          g = 0.48 + 0.18 * Math.random()
+          b = 0.95 + 0.05 * Math.random()
+        }
+
+        pos[i * 3]     = x
+        pos[i * 3 + 1] = pct * 55 - 27
+        pos[i * 3 + 2] = z
+        col[i * 3]     = r
+        col[i * 3 + 1] = g
+        col[i * 3 + 2] = b
       }
 
       const geo = new THREE.BufferGeometry()
@@ -65,7 +86,7 @@ export default function SceneCanvas() {
       geo.setAttribute('color',    new THREE.BufferAttribute(col, 3))
 
       const mat = new THREE.PointsMaterial({
-        size: 0.06,
+        size: 0.07,
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         transparent: true,
@@ -77,8 +98,8 @@ export default function SceneCanvas() {
       scene.add(particles)
 
       // ── Floating wireframe geometries ──────────────────────
-      const addFloater = (geometry: any, color: number, x: number, y: number, z: number) => {
-        const m = new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.12 })
+      const addFloater = (geometry: any, color: number, x: number, y: number, z: number, opacity = 0.18) => {
+        const m = new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity })
         const mesh = new THREE.Mesh(geometry, m)
         mesh.position.set(x, y, z)
         scene.add(mesh)
@@ -86,10 +107,10 @@ export default function SceneCanvas() {
         return mesh
       }
 
-      const ico1 = addFloater(new THREE.IcosahedronGeometry(1.8, 1),  0x7C3AED, -7,  4, -4)
-      const ico2 = addFloater(new THREE.TorusGeometry(1.4, 0.35, 8, 16), 0xF43F5E, 7, -3, -5)
-      const ico3 = addFloater(new THREE.OctahedronGeometry(1.2),       0xA78BFA, 5,  5, -3)
-      const ico4 = addFloater(new THREE.TorusKnotGeometry(0.8, 0.25, 64, 8), 0xFB7185, -5, -5, -2)
+      const ico1 = addFloater(new THREE.IcosahedronGeometry(1.4, 1),        0x7C3AED, -7,  4, -4, 0.20)
+      const ico2 = addFloater(new THREE.TorusGeometry(1.1, 0.28, 8, 16),    0xF43F5E,  7, -3, -5, 0.18)
+      const ico3 = addFloater(new THREE.OctahedronGeometry(1.0),             0xA78BFA,  5,  5, -3, 0.22)
+      const ico4 = addFloater(new THREE.TorusKnotGeometry(0.65, 0.2, 64, 8), 0xFB7185, -5, -5, -2, 0.16)
 
       // ── Lighting ──────────────────────────────────────────
       scene.add(new THREE.AmbientLight(0x7C3AED, 0.4))
