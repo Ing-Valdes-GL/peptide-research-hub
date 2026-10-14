@@ -34,8 +34,10 @@ export default function OrdersPage() {
 
   useEffect(() => {
     const checkUser = async () => {
+      // Anciens liens Supabase expirés/consommés : #error_description=... -> affiché sur /login
+      const linkError = new URLSearchParams(window.location.hash.slice(1)).get('error_description')
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) router.push('/login')
+      if (!user) router.replace(`/login?next=/orders${linkError ? `&error=${encodeURIComponent(linkError)}` : ''}`)
       else fetchOrders(user.id)
     }
     checkUser()

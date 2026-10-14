@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Loader2, Send, FlaskConical, Microscope, Dna, ShieldCheck } from 'lucide-react'
+import { requestLoginEmail, verifyLoginCode } from '@/lib/auth-client'
+import { safeNextPath } from '@/lib/site'
+import { OtpInput } from '@/components/auth/OtpInput'
+import { ArrowLeft, Loader2, Send, FlaskConical, Dna, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
@@ -16,33 +19,74 @@ const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
   delay: Math.random() * 5,
 }))
 
+// useSearchParams impose un Suspense boundary (App Router)
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginFlow />
+    </Suspense>
+  )
+}
+
+function LoginFlow() {
   const router = useRouter()
+  const params = useSearchParams()
+  const next = safeNextPath(params.get('next'))
+
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
+  const [code, setCode] = useState('')
+  const [codeLength, setCodeLength] = useState(6)
+  const [errorKey, setErrorKey] = useState(0)
+  const [message, setMessage] = useState(params.get('error') ?? '')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Déjà connecté -> pas de raison de rester ici
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace(next)
+    })
+  }, [router, next])
+
+  const handleLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    setLoading(true)
+    setMessage('')
     try {
-      setLoading(true)
-      setMessage({ type: '', text: '' })
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/orders` },
-      })
-      if (error) throw error
+      const { codeLength } = await requestLoginEmail(email, next)
+      setCodeLength(codeLength)
+      setCode('')
       setSent(true)
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Transmission failed.' })
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Transmission failed.')
     } finally {
       setLoading(false)
     }
   }
+
+  const handleVerify = async (value: string) => {
+    setLoading(true)
+    setMessage('')
+    try {
+      await verifyLoginCode(email, value)
+      router.replace(next)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Invalid code.')
+      setErrorKey((k) => k + 1)
+      setCode('')
+      setLoading(false)
+    }
+  }
+
+  const errorBox = message && (
+    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+      className="mb-6 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold uppercase tracking-wider">
+      {message}
+    </motion.div>
+  )
 
   return (
     <div className="min-h-screen bg-[#06000F] text-white overflow-hidden relative flex items-center justify-center">
@@ -120,15 +164,10 @@ export default function LoginPage() {
                   Secure <span className="bg-gradient-to-r from-[#8B5CF6] to-[#FB7185] bg-clip-text text-transparent">Access</span>
                 </h1>
                 <p className="text-xs text-white/30 font-bold uppercase tracking-widest mb-10">
-                  Enter your email — we'll send a magic link
+                  Enter your email — we'll send a sign-in code
                 </p>
 
-                {message.text && (
-                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold uppercase tracking-wider">
-                    {message.text}
-                  </motion.div>
-                )}
+                {errorBox}
 
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-2">
@@ -136,6 +175,7 @@ export default function LoginPage() {
                     <input
                       type="email"
                       required
+                      autoComplete="email"
                       placeholder="user@peptidesresearchhub.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -149,7 +189,7 @@ export default function LoginPage() {
                     className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.2em] text-white transition-all hover:scale-[1.02] hover:shadow-[0_15px_40px_rgba(124,58,237,0.35)] active:scale-[0.98] disabled:opacity-50"
                     style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}
                   >
-                    {loading ? <Loader2 size={18} className="animate-spin" /> : <>Send Magic Link <Send size={14} /></>}
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <>Send Code <Send size={14} /></>}
                   </button>
                 </form>
 
@@ -162,26 +202,39 @@ export default function LoginPage() {
               </motion.div>
             ) : (
               <motion.div key="sent" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-                className="py-8 text-center">
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8"
-                  style={{ background: 'linear-gradient(135deg,#7C3AED,#F43F5E)' }}
-                >
-                  <Send size={36} className="text-white" />
-                </motion.div>
+                transition={{ type: 'spring', damping: 20, stiffness: 200 }}>
                 <h2 className="text-2xl font-black uppercase mb-3" style={{ fontFamily: "'Exo',sans-serif" }}>
-                  Link Transmitted
+                  Check your inbox
                 </h2>
                 <p className="text-white/40 text-xs font-bold uppercase tracking-widest leading-relaxed mb-8">
-                  Check your inbox.<br />The link expires in 10 minutes.
+                  Enter the code sent to<br /><span className="text-white/70 normal-case">{email}</span><br />or click the link in the email.
                 </p>
-                <button onClick={() => setSent(false)}
-                  className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
-                  ← Use different email
-                </button>
+
+                {errorBox}
+
+                <OtpInput
+                  length={codeLength}
+                  value={code}
+                  onChange={setCode}
+                  onComplete={handleVerify}
+                  disabled={loading}
+                  errorKey={errorKey}
+                />
+
+                <div className="h-6 mt-6 flex justify-center">
+                  {loading && <Loader2 size={18} className="animate-spin text-white/50" />}
+                </div>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <button onClick={() => { setSent(false); setMessage('') }}
+                    className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
+                    ← Different email
+                  </button>
+                  <button onClick={() => handleLogin()} disabled={loading}
+                    className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors disabled:opacity-40">
+                    Resend code
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

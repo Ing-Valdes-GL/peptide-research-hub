@@ -3,10 +3,11 @@
 
 import React, { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import type { User } from "@supabase/supabase-js"
 import { 
   ShoppingCart, Search, Sun, Moon, Menu, X, 
-  Home, Package, MessageCircle, ShieldCheck, ClipboardList 
+  Home, Package, MessageCircle, ShieldCheck, ClipboardList, LogIn, LogOut 
 } from "lucide-react"
 import { useTheme } from "./ThemeProvider"
 import { supabase } from "@/lib/supabase"
@@ -14,7 +15,9 @@ import { supabase } from "@/lib/supabase"
 export default function Header() {
   const { theme, toggleTheme } = useTheme()
   const pathname = usePathname()
+  const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   
   // --- ÉTAT DU PANIER ---
@@ -39,29 +42,42 @@ export default function Header() {
     // Écouter les changements venant d'autres onglets
     window.addEventListener('storage', updateCartBadge)
 
-    const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-        
-        const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
-        const isEmailAdmin = adminEmails.includes(session.user.email ?? '')
-        setIsAdmin(!!profile?.is_admin || isEmailAdmin)
-      }
+    // Session réactive : se met à jour au login / logout / refresh du token (et entre onglets)
+    const checkAdmin = async (u: User | null) => {
+      if (!u) return setIsAdmin(false)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', u.id)
+        .maybeSingle()
+
+      const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
+      const isEmailAdmin = adminEmails.includes(u.email ?? '')
+      setIsAdmin(!!profile?.is_admin || isEmailAdmin)
     }
 
-    checkAdmin()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null
+      setUser(u)
+      // Pas d'appel Supabase synchrone dans le callback (deadlock du lock auth) -> différé
+      setTimeout(() => checkAdmin(u), 0)
+    })
 
     // Nettoyage des écouteurs
     return () => {
+      subscription.unsubscribe()
       window.removeEventListener('cart-updated', updateCartBadge)
       window.removeEventListener('storage', updateCartBadge)
     }
   }, [])
+
+  const loginNext = pathname && pathname !== '/login' ? `?next=${encodeURIComponent(pathname)}` : ''
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/home')
+    router.refresh()
+  }
 
   const navLinks = [
     { name: "Home", href: "/home", icon: Home },
@@ -131,6 +147,24 @@ export default function Header() {
             </Link>
           </div>
 
+          {user ? (
+            <button
+              onClick={signOut}
+              title={`Signed in as ${user.email ?? ''}`}
+              aria-label="Sign out"
+              className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest opacity-70 hover:opacity-100 transition-opacity"
+            >
+              <LogOut size={15} /> Sign out
+            </button>
+          ) : (
+            <Link
+              href={`/login${loginNext}`}
+              className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-opacity"
+            >
+              <LogIn size={15} /> Sign in
+            </Link>
+          )}
+
           <button
             onClick={toggleTheme}
             className={`p-3 rounded-xl transition-all border ${
@@ -171,6 +205,24 @@ export default function Header() {
               {link.name}
             </Link>
           ))}
+          {user ? (
+            <button
+              onClick={() => { setIsMenuOpen(false); signOut() }}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-primary/5"
+            >
+              <LogOut size={18} className="opacity-50" />
+              Sign out
+            </button>
+          ) : (
+            <Link
+              href={`/login${loginNext}`}
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-4 p-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-primary text-white"
+            >
+              <LogIn size={18} />
+              Sign in
+            </Link>
+          )}
         </div>
       )}
     </header>

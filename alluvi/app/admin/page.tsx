@@ -38,7 +38,7 @@ export default function AdminDashboard() {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {
-        router.push('/login')
+        router.replace('/login?next=/admin')
         return
       }
 
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error("Security Check Error:", err)
-      router.push('/login')
+      router.replace('/login?next=/admin')
     }
   }
 

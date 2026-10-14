@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { requestLoginEmail, verifyLoginCode } from '@/lib/auth-client'
+import { OtpInput } from '@/components/auth/OtpInput'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import LegalModal from '@/components/legal/LegalModal'
@@ -19,7 +21,11 @@ export default function CheckoutPage() {
   // États pour le Modal d'Authentification
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
-  const [authMessage, setAuthMessage] = useState('')
+  const [authMessage, setAuthMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
+  const [codeSent, setCodeSent] = useState(false)
+  const [code, setCode] = useState('')
+  const [codeLength, setCodeLength] = useState(6)
+  const [codeErrorKey, setCodeErrorKey] = useState(0)
 
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', companyName: '',
@@ -147,18 +153,37 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleRequestMagicLink = async () => {
+  // Code envoyé par mail (via /api/auth/magic-link). Le lien du mail ramène sur /checkout,
+  // où le formulaire est restauré depuis localStorage.
+  const handleRequestCode = async () => {
     setAuthLoading(true)
-    setAuthMessage('')
+    setAuthMessage(null)
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: { emailRedirectTo: `${window.location.origin}/checkout` }
-      })
-      if (error) throw error
-      setAuthMessage('A secure login link has been sent to your email. Click it to continue.')
-    } catch (err: any) {
-      setAuthMessage('Error: ' + err.message)
+      const { codeLength } = await requestLoginEmail(formData.email, '/checkout')
+      setCodeLength(codeLength)
+      setCode('')
+      setCodeSent(true)
+      setAuthMessage({ type: 'ok', text: 'Enter the code we just emailed you.' })
+    } catch (err) {
+      setAuthMessage({ type: 'error', text: err instanceof Error ? err.message : 'Could not send the code.' })
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  // Code valide -> session active -> on enchaîne directement sur la commande
+  const handleVerifyCode = async (value: string) => {
+    setAuthLoading(true)
+    setAuthMessage(null)
+    try {
+      await verifyLoginCode(formData.email, value)
+      setShowAuthModal(false)
+      setCodeSent(false)
+      await handlePlaceOrder()
+    } catch (err) {
+      setAuthMessage({ type: 'error', text: err instanceof Error ? err.message : 'Invalid code.' })
+      setCodeErrorKey((k) => k + 1)
+      setCode('')
     } finally {
       setAuthLoading(false)
     }
@@ -308,9 +333,24 @@ export default function CheckoutPage() {
             <p className="text-slate-500 text-sm mb-6">Verify your identity via email to complete your purchase.</p>
             <div className="space-y-4">
               <input type="email" readOnly value={formData.email} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-500" />
-              {authMessage && <div className="p-4 rounded-xl bg-green-50 text-green-700 text-sm border border-green-200">{authMessage}</div>}
-              <button onClick={handleRequestMagicLink} disabled={authLoading} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-[#FFA52F] transition-all disabled:opacity-50">
-                {authLoading ? 'Sending...' : 'Request login link'}
+              {authMessage && (
+                <div className={`p-4 rounded-xl text-sm border ${authMessage.type === 'ok' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                  {authMessage.text}
+                </div>
+              )}
+              {codeSent && (
+                <OtpInput
+                  length={codeLength}
+                  value={code}
+                  onChange={setCode}
+                  onComplete={handleVerifyCode}
+                  disabled={authLoading}
+                  errorKey={codeErrorKey}
+                  tone="light"
+                />
+              )}
+              <button onClick={handleRequestCode} disabled={authLoading} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-[#FFA52F] transition-all disabled:opacity-50">
+                {authLoading ? 'Please wait...' : codeSent ? 'Resend code' : 'Email me a sign-in code'}
               </button>
             </div>
           </div>
