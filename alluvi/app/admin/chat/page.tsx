@@ -67,7 +67,7 @@ function ChatInterface() {
 
   const checkAdmin = async () => {
     const { data: { user: currentUser } } = await supabase.auth.getUser()
-    if (!currentUser) { router.push('/login'); return; }
+    if (!currentUser) { router.replace('/login?next=/admin/chat'); return; }
     const adminEmails = ['doungmolagoungvaldes@gmail.com', 'kentrellzaza83@gmail.com']
     const isOwner = adminEmails.includes(currentUser.email ?? '')
     const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', currentUser.id).single()
